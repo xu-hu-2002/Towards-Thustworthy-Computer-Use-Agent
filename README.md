@@ -1,12 +1,16 @@
 # <img src="figures/koala.png" alt="CUA Koala" width="50" height="50" /> Toward Trustworthy Computer-Use Agents: Trust Boundaries, Formal Analysis, Evaluation Gaps, and Governance
 
 <p align="center">
-  <a href="#"><img src="https://img.shields.io/badge/Paper-PDF-b31b1b?style=flat-square&logo=adobeacrobatreader&logoColor=white" alt="Paper PDF"/></a>
-  <a href="#"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-yellow?style=flat-square" alt="Hugging Face"/></a>
+  <a href="https://huggingface.co/datasets/Xu-Hu-2002/Toward-Thustworthy-Computer-Use-Agent/resolve/main/paper.pdf"><img src="https://img.shields.io/badge/Paper-PDF-b31b1b?style=flat-square&logo=adobeacrobatreader&logoColor=white" alt="Paper PDF"/></a>
+  <a href="https://huggingface.co/datasets/Xu-Hu-2002/Toward-Thustworthy-Computer-Use-Agent"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-yellow?style=flat-square" alt="Hugging Face"/></a>
   <a href="https://github.com/xu-hu-2002/Towards-Thustworthy-Computer-Use-Agent"><img src="https://img.shields.io/github/stars/xu-hu-2002/Towards-Thustworthy-Computer-Use-Agent?style=flat-square&logo=github" alt="GitHub stars"/></a>
 </p>
 
-> 📄 **Paper:** link coming soon — the PDF will be hosted on Hugging Face Datasets. The latest draft and all source `.tex` / `.bib` are already available in this repository.
+<p align="center">
+  <b>The University of Texas at Dallas (UTD)</b> &nbsp;·&nbsp; <b>University of California, Davis (UCD)</b>
+</p>
+
+> 📄 **Paper:** the compiled PDF is now hosted on Hugging Face Datasets — [open the PDF](https://huggingface.co/datasets/Xu-Hu-2002/Toward-Thustworthy-Computer-Use-Agent/resolve/main/paper.pdf) or browse the [dataset page](https://huggingface.co/datasets/Xu-Hu-2002/Toward-Thustworthy-Computer-Use-Agent). All source `.tex` / `.bib` are also available in this repository.
 
 <p align="center"><img src="figures/case_study.png" alt="Figure 1: Case study" width="900" /></p>
 
@@ -645,15 +649,16 @@ _See the paper for discussion; no external citations in this subsection._
 
 ## 🔎 Citation
 
-The paper will be hosted on Hugging Face Datasets; once the link is live, the BibTeX entry below will be updated with the final URL. In the meantime, you can cite this repository:
+The paper PDF is hosted on Hugging Face Datasets. If you find this survey useful, please consider citing:
 
 ```bibtex
 @misc{trustworthycua2026,
-  title  = {Toward Trustworthy Computer-Use Agents: Trust Boundaries, Formal Analysis, Evaluation Gaps, and Governance},
-  author = {TBD},
-  year   = {2026},
-  note   = {Preprint, hosting venue TBD},
-  url    = {https://github.com/xu-hu-2002/Towards-Thustworthy-Computer-Use-Agent}
+  title        = {Toward Trustworthy Computer-Use Agents: Trust Boundaries, Formal Analysis, Evaluation Gaps, and Governance},
+  author       = {Xu Hu and collaborators},
+  year         = {2026},
+  howpublished = {The University of Texas at Dallas (UTD) and University of California, Davis (UCD)},
+  note         = {Preprint, hosted on Hugging Face Datasets},
+  url          = {https://huggingface.co/datasets/Xu-Hu-2002/Toward-Thustworthy-Computer-Use-Agent}
 }
 ```
 
