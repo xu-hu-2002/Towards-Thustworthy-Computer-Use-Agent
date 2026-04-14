@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://www.utdallas.edu/"><img src="figures/logos/utd.png?v=2" alt="UT Dallas" height="60"/></a>
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://www.ucdavis.edu/"><img src="figures/logos/ucd.png?v=2" alt="UC Davis" height="60"/></a>
+  <a href="https://www.ucdavis.edu/"><img src="figures/logos/ucd.png?v=3" alt="UC Davis" height="60"/></a>
 </p>
 
 <p align="center">
