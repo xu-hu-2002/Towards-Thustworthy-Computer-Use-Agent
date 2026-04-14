@@ -6,7 +6,7 @@
   <a href="https://github.com/xu-hu-2002/Towards-Thustworthy-Computer-Use-Agent"><img src="https://img.shields.io/github/stars/xu-hu-2002/Towards-Thustworthy-Computer-Use-Agent?style=flat-square&logo=github" alt="GitHub stars"/></a>
 </p>
 
-> 📄 **Paper:** link coming soon (we're finalising the hosting venue — TechRxiv / TMLR / Zenodo / Hugging Face Dataset). The latest draft and all source `.tex` / `.bib` are available in this repository.
+> 📄 **Paper:** link coming soon — the PDF will be hosted on Hugging Face Datasets. The latest draft and all source `.tex` / `.bib` are already available in this repository.
 
 <p align="center"><img src="figures/case_study.png" alt="Figure 1: Case study" width="900" /></p>
 
@@ -645,7 +645,7 @@ _See the paper for discussion; no external citations in this subsection._
 
 ## 🔎 Citation
 
-The paper is not yet publicly hosted on a preprint server. Once it is (arXiv / TechRxiv / TMLR / Zenodo / Hugging Face), the BibTeX entry below will be updated with the correct venue, authors, and URL. In the meantime, you can cite this repository:
+The paper will be hosted on Hugging Face Datasets; once the link is live, the BibTeX entry below will be updated with the final URL. In the meantime, you can cite this repository:
 
 ```bibtex
 @misc{trustworthycua2026,
