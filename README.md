@@ -15,6 +15,13 @@
   <b>The University of Texas at Dallas (UTD)</b> &nbsp;·&nbsp; <b>University of California, Davis (UCD)</b>
 </p>
 
+<p align="center">
+  Xu Hu, Haoming Li, Md Nahiyan Uddin, Sabbir Ahmed, Qiannan Li<sup>&#8224;</sup>, Jessica Jin Ouyang,<br/>
+  Latifur Khan, Feng Chen<sup>*</sup>, Bingzhe Li<sup>*</sup>
+</p>
+
+<p align="center"><sub><sup>*</sup> Corresponding authors. &nbsp;&nbsp; <sup>&#8224;</sup> UC Davis; all other authors are at UT Dallas.</sub></p>
+
 > 📄 **Paper:** the compiled PDF is now hosted on Hugging Face Datasets — [open the PDF](https://huggingface.co/datasets/Xu-Hu-2002/Toward-Thustworthy-Computer-Use-Agent/resolve/main/paper.pdf) or browse the [dataset page](https://huggingface.co/datasets/Xu-Hu-2002/Toward-Thustworthy-Computer-Use-Agent). All source `.tex` / `.bib` are also available in this repository.
 
 <p align="center"><img src="figures/case_study.png" alt="Figure 1: Case study" width="900" /></p>
@@ -659,7 +666,7 @@ The paper PDF is hosted on Hugging Face Datasets. If you find this survey useful
 ```bibtex
 @misc{trustworthycua2026,
   title        = {Toward Trustworthy Computer-Use Agents: Trust Boundaries, Formal Analysis, Evaluation Gaps, and Governance},
-  author       = {Xu Hu and collaborators},
+  author       = {Hu, Xu and Li, Haoming and Uddin, Md Nahiyan and Ahmed, Sabbir and Li, Qiannan and Ouyang, Jessica Jin and Khan, Latifur and Chen, Feng and Li, Bingzhe},
   year         = {2026},
   howpublished = {The University of Texas at Dallas (UTD) and University of California, Davis (UCD)},
   note         = {Preprint, hosted on Hugging Face Datasets},
