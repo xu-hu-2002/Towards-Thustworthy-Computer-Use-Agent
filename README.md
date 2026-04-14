@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://huggingface.co/datasets/Xu-Hu-2002/Toward-Thustworthy-Computer-Use-Agent/resolve/main/paper.pdf"><img src="https://img.shields.io/badge/Paper-PDF-b31b1b?style=flat-square&logo=adobeacrobatreader&logoColor=white" alt="Paper PDF"/></a>
   <a href="https://huggingface.co/datasets/Xu-Hu-2002/Toward-Thustworthy-Computer-Use-Agent"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-yellow?style=flat-square" alt="Hugging Face"/></a>
-  <a href="https://github.com/xu-hu-2002/Towards-Thustworthy-Computer-Use-Agent"><img src="https://img.shields.io/github/stars/xu-hu-2002/Towards-Thustworthy-Computer-Use-Agent?style=flat-square&logo=github" alt="GitHub stars"/></a>
+  <a href="https://github.com/xu-hu-2002/Toward-Thustworthy-Computer-Use-Agent"><img src="https://img.shields.io/github/stars/xu-hu-2002/Toward-Thustworthy-Computer-Use-Agent?style=flat-square&logo=github" alt="GitHub stars"/></a>
 </p>
 
 <p align="center">
