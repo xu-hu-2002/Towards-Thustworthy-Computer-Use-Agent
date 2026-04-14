@@ -276,7 +276,7 @@ _See the paper for discussion; no external citations in this subsection._
 - [WorldGUI: An Interactive Benchmark for Desktop GUI Automation from Any Starting Point](https://arxiv.org/abs/2502.08047)
 - [ScreenSpot-Pro](https://arxiv.org/abs/2504.07981)
 - [Uncertainty-Aware GUI Agent: Adaptive Perception through Component Recommendation and Human-in-the-Loop Refinement](https://arxiv.org/abs/2508.04025)
-- OSCAR: Operating System Control via State-Aware Reasoning and Re-Planning
+- [OSCAR: Operating System Control via State-Aware Reasoning and Re-Planning](https://arxiv.org/abs/2410.18963)
 - [Surfer 2: The Next Generation of Cross-Platform Computer Use Agents](https://arxiv.org/abs/2510.19949)
 
 ### 4. Action-and-Permission Boundary
@@ -431,8 +431,8 @@ _See the paper for discussion; no external citations in this subsection._
 
 ### 7. Human-Oversight-and-Governance Boundary
 
-- Predict Responsibly: Improving Fairness and Accuracy by Learning to Defer
-- Sagas
+- [Predict Responsibly: Improving Fairness and Accuracy by Learning to Defer](https://arxiv.org/abs/1711.06664)
+- [Sagas](https://doi.org/10.1145/38713.38742)
 
 #### 7.1 Pre-execution: approval and authority scoping
 
@@ -591,7 +591,7 @@ _See the paper for discussion; no external citations in this subsection._
 
 - [AgentSpec: Customizable Runtime Enforcement for Safe and Reliable LLM Agents](https://arxiv.org/abs/2503.18666)
 - [Progent: Programmable Privilege Control for LLM Agents](https://arxiv.org/abs/2504.11703)
-- Predict Responsibly: Improving Fairness and Accuracy by Learning to Defer
+- [Predict Responsibly: Improving Fairness and Accuracy by Learning to Defer](https://arxiv.org/abs/1711.06664)
 - [STEVE: Step Verification for GUI Agent Training](https://arxiv.org/abs/2503.12532)
 - [BeSafe-Bench: Unveiling Behavioral Safety Risks of Situated Agents in Functional Environments](https://arxiv.org/abs/2603.25747)
 - [Taming OpenClaw: Security Analysis and Mitigation of Autonomous LLM Agent Threats](https://arxiv.org/abs/2603.11619)
