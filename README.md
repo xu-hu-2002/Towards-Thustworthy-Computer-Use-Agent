@@ -333,14 +333,14 @@ _See the paper for discussion; no external citations in this subsection._
 
 #### 5.1 Stale and misleading memory
 
-- Anatomy of Agentic Memory: Taxonomy and Empirical Analysis of Evaluation and System Limitations
-- Memory in the age of ai agents
+- [Anatomy of Agentic Memory: Taxonomy and Empirical Analysis of Evaluation and System Limitations](https://arxiv.org/abs/2602.19320)
+- [Memory in the age of ai agents](https://arxiv.org/abs/2512.13564)
 - [AgentProg](https://arxiv.org/abs/2512.10371)
 - [MemPO](https://arxiv.org/abs/2603.00680)
 - [A-MEM: Agentic Memory for LLM Agents](https://arxiv.org/abs/2502.12110)
-- MAGMA: A Multi-Graph based Agentic Memory Architecture for AI Agents
-- Hippocampus: An Efficient and Scalable Memory Module for Agentic AI
-- Nemori: Self-organizing agent memory inspired by cognitive science
+- [MAGMA: A Multi-Graph based Agentic Memory Architecture for AI Agents](https://arxiv.org/abs/2601.03236)
+- [Hippocampus: An Efficient and Scalable Memory Module for Agentic AI](https://arxiv.org/abs/2602.13594)
+- [Nemori: Self-organizing agent memory inspired by cognitive science](https://arxiv.org/abs/2508.03341)
 - [OpenViking: Hierarchical File-System Memory for Multi-Agent Systems](https://arxiv.org/abs/2511.08712)
 - [AgeMem: Unified Short-Term and Long-Term Memory for GUI Agents](https://arxiv.org/abs/2601.06137)
 - [Auto-Scaling Continuous Memory for GUI Agent](https://arxiv.org/abs/2510.09038)
@@ -501,7 +501,7 @@ _See the paper for discussion; no external citations in this subsection._
 - [OS-Harm](https://arxiv.org/abs/2506.14866)
 - [WASP](https://arxiv.org/abs/2504.18575)
 - [OpenAgentSafety: A Comprehensive Framework for Evaluating Real-World AI Agent Safety](https://arxiv.org/abs/2507.06134)
-- Evaluating Large Language Models Trained on Code
+- [Evaluating Large Language Models Trained on Code](https://arxiv.org/abs/2107.03374)
 - [AMA-Bench: Evaluating Agentic Memory](https://arxiv.org/abs/2602.22769)
 - [CUARewardBench](https://arxiv.org/abs/2510.18596)
 - [STEVE: Step Verification for GUI Agent Training](https://arxiv.org/abs/2503.12532)
