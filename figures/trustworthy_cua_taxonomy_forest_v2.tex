@@ -1,0 +1,223 @@
+% Trustworthy CUA Boundary-Failure Taxonomy v2 (evidence-provenance coloring)
+% Citation colors: \cSaf (teal) = safety-targeted, \cInc (black) = safety-incidental, \cTra (blue) = transferred
+% Requires preamble macros: \leafcites, \cSaf, \cInc, \cTra
+%
+\begin{forest}
+  for tree={
+    grow'=0,
+    child anchor=west,
+    parent anchor=east,
+    anchor=west,
+    s sep=5pt,
+    l sep=9pt,
+    inner xsep=3pt,
+    inner ysep=4pt,
+    font=\footnotesize,
+    edge path={
+      \noexpand\path [draw, thick, black!50]
+        (!u.parent anchor) |- (.child anchor)\forestoption{edge label};
+    },
+  },
+  where level=0{
+    font=\small\bfseries,
+    fill=gray!10,
+    rounded corners=2pt,
+    draw=black!60,
+    inner xsep=5pt, inner ysep=6pt,
+  }{},
+  where level=1{
+    font=\footnotesize\bfseries,
+    fill=white,
+    text width=3.5cm,
+    inner xsep=4pt, inner ysep=5pt,
+    s sep=16pt,
+  }{},
+  where level=2{
+    font=\footnotesize,
+    draw=black!50,
+    fill=white,
+    text width=3.2cm,
+    inner xsep=3pt, inner ysep=4pt,
+    s sep=6pt,
+  }{},
+  [{Trustworthy Computer-Use Agents}
+    [{\textsection3. External Content}, fill=cyan!12
+      [{\textsection3.1 Indirect Instruction Injection}
+        [{\leafcites{\cSaf{WASP~\cite{wasp2025}},
+          \cSaf{OS-Harm~\cite{osharm2025}},
+          \cSaf{SafeArena~\cite{safearena2025}},
+          \cTra{AgentHarm~\cite{agentharm2024}},
+          \cTra{Formalizing PI~\cite{liuyupei2024formalizing}},
+          \cTra{StruQ~\cite{struq2025}},
+          \cTra{SecAlign~\cite{secalign2025}},
+          \cTra{Crescendo~\cite{crescendo2025}}}}]
+      ]
+      [{\textsection3.2 Deceptive Interface State}
+        [{\leafcites{\cInc{CogAgent~\cite{cogagent2023}},
+          \cInc{SeeClick~\cite{seeclick2024}},
+          \cInc{ShowUI~\cite{showui2024}},
+          \cInc{OS-ATLAS~\cite{osatlas2024}},
+          \cInc{UI-TARS~\cite{uitars2025}},
+          \cInc{UI-TARS-2~\cite{uitars22025}},
+          \cInc{AutoGLM~\cite{autoglm2024}},
+          \cInc{ScreenSpot-Pro~\cite{screenspotpro2025}},
+          \cInc{WebArena~\cite{webarena2023}},
+          \cInc{WebVoyager~\cite{webvoyager2024}},
+          \cInc{Online-Mind2Web~\cite{onlinemind2web2025}},
+          \cInc{ScaleCUA~\cite{scalecua2025}}}}]
+      ]
+      [{\textsection3.3 Grounding Drift}
+        [{\leafcites{\cInc{OSWorld~\cite{osworld2024}},
+          \cInc{AndroidWorld~\cite{androidworld2024}},
+          \cInc{Windows Agent Arena~\cite{windowsarena2024}},
+          \cInc{Agent~S~\cite{agents2024}},
+          \cInc{Cradle~\cite{cradle2024}},
+          \cInc{OS-Copilot~\cite{oscopilot2024}},
+          \cInc{Computer-Using World Model~\cite{cuwm2026}}}}]
+      ]
+    ]
+    [{\textsection4. Action \& Permission}, fill=green!10
+      [{\textsection4.1 Authority Scoping \& Approval}
+        [{\leafcites{\cSaf{OS-Harm~\cite{osharm2025}},
+          \cSaf{SafeArena~\cite{safearena2025}},
+          \cInc{Agent~S~\cite{agents2024}},
+          \cInc{Cradle~\cite{cradle2024}},
+          \cInc{OS-Copilot~\cite{oscopilot2024}},
+          \cTra{AgentHarm~\cite{agentharm2024}}}}]
+      ]
+      [{\textsection4.2 Step Verification \& Staged Control}
+        [{\leafcites{\cInc{OpenAI CUA~\cite{openai2025cua}},
+          \cInc{Anthropic computer use~\cite{anthropic2025computeruse}},
+          \cInc{Project Mariner~\cite{google2026mariner}}}}]
+      ]
+      [{\textsection4.3 Runtime Enforcement \& Intervention}
+        [{\leafcites{\cSaf{AgentSentinel~\cite{agentsentinel2025}},
+          \cInc{STEVE~\cite{steve2025}},
+          \cInc{UFO2~\cite{ufo2025}},
+          \cInc{CUARewardBench~\cite{cuarewardbench2025}},
+          \cInc{Learn-by-Interact~\cite{learnbyinteract2025}},
+          \cInc{ComputerRL~\cite{computerrl2025}},
+          \cInc{PC~Agent-E~\cite{pcaegente2025}},
+          \cInc{DART-GUI~\cite{dartgui2025}},
+          \cInc{AReaL~\cite{areal2025}},
+          \cInc{EvoCUA~\cite{evocua2026}},
+          \cInc{Fara-7B~\cite{fara2025}},
+          \cSaf{MS OpenClaw Safety~\cite{msOpenClawSafety2026}}}}]
+      ]
+    ]
+    [{\textsection5. Memory \& Personalization}, fill=orange!10
+      [{\textsection5.1 Stale \& Misleading Memory}
+        [{\leafcites{\cInc{AgentProg~\cite{agentprog2025}},
+          \cInc{MemPO~\cite{mempo2026}},
+          \cInc{A-MEM~\cite{amem2025}},
+          \cInc{Mem0~\cite{mem02024}},
+          \cInc{OpenViking~\cite{openviking2025}},
+          \cInc{PAL-UI~\cite{palui2025}},
+          \cInc{HiconAgent~\cite{hiconagent2025}},
+          \cInc{OdysseyAgent~\cite{odysseyagent2025}},
+          \cInc{Computer-Using World Model~\cite{cuwm2026}},
+          \cInc{Auto-scaling Memory~\cite{autoscalememory2025}},
+          \cInc{HyMEM~\cite{hymem2026}},
+          \cInc{MGA~\cite{mga2025}},
+          \cInc{Chain-of-Memory~\cite{chainofmemory2025}},
+          \cInc{PersonalAlign~\cite{personalalign2026}},
+          \cInc{EchoTrail-GUI~\cite{echotrailgui2025}},
+          \cInc{Agent-ScanKit~\cite{agentscankit2025}}}}]
+      ]
+      [{\textsection5.2 Sensitive Retention \& Privacy Leakage}
+        [{\leafcites{\cSaf{AgeMem~\cite{agemem2026}},
+          \cInc{Mem0~\cite{mem02024}},
+          \cInc{OpenViking~\cite{openviking2025}},
+          \cInc{OpenClaw-RL~\cite{openclawrl2026}},
+          \cSaf{GUIGuard~\cite{guiguard2026}},
+          \cSaf{Anon-Privacy~\cite{anonprivacy2026}},
+          \cSaf{MLA-Trust~\cite{mlatrust2025}},
+          \cSaf{MS OpenClaw Safety~\cite{msOpenClawSafety2026}}}}]
+      ]
+      [{\textsection5.3 Memory Poisoning \& Evaluation Gaps}
+        [{\leafcites{\cInc{MemGUI-Bench~\cite{memguibench2026}},
+          \cInc{AMA-Bench~\cite{amabench2025}},
+          \cInc{AgentDiet~\cite{agentdiet2025}},
+          \cInc{GUIPruner~\cite{guipruner2026}},
+          \cTra{PoisonedRAG~\cite{poisonedrag2025}},
+          \cTra{Storage-to-Steering~\cite{storagetosteering2026}},
+          \cSaf{MINJA~\cite{minja2025}},
+          \cSaf{OpenClaw Security~\cite{autonomousagentthreats2026}},
+          \cSaf{OS-Sentinel~\cite{ossentinel2025}}}}]
+      ]
+    ]
+    [{\textsection6. Tool, Skill \& Ecosystem}, fill=violet!8
+      [{\textsection6.1 Skill Abstraction \& Ecosystem Trust}
+        [{\leafcites{\cInc{CUA-Skill~\cite{cuaskill2026}},
+          \cInc{Browser-Use~\cite{browseruse2025}},
+          \cInc{Midscene.js~\cite{midscene2025}},
+          \cInc{OpenCUA~\cite{opencua2025}},
+          \cInc{CodeAgents~\cite{codeagents2025}}}}]
+      ]
+      [{\textsection6.2 Injection \& Poisoning at Skill Boundary}
+        [{\leafcites{\cSaf{OpenClaw audit~\cite{clawaudit2026}},
+          \cSaf{Carapace~\cite{openclawcarapace2026}},
+          \cSaf{skill security~\cite{skillsecurity2026}},
+          \cInc{OpenClaw~\cite{openclaw2026}},
+          \cInc{OpenClaw-RL~\cite{openclawrl2026}},
+          \cTra{MCP threat model~\cite{hou2025mcp}},
+          \cTra{Tool-Selection Injection~\cite{ndss2026toolinjection}},
+          \cTra{Plugin Injection~\cite{sp2026plugininjection}},
+          \cSaf{ClawWorm~\cite{clawworm2026}},
+          \cSaf{SkillFortify~\cite{skillfortify2026}},
+          \cSaf{Trojan's Whisper~\cite{trojanswhisper2026}},
+          \cSaf{Skill-Inject~\cite{skillinject2026}},
+          \cTra{Skills in the Wild~\cite{agentskillswild2026}},
+          \cTra{Instruction Hierarchy~\cite{instructionhierarchy2024}}}}]
+      ]
+      [{\textsection6.3 Ecosystem Propagation \& Systemic Risk}
+        [{\leafcites{\cSaf{IronClaw~\cite{ironclaw2026}},
+          \cSaf{SecureClaw~\cite{secureclaw2026}},
+          \cSaf{Carapace~\cite{openclawcarapace2026}},
+          \cInc{OpenClaw~\cite{openclaw2026}},
+          \cInc{OpenClaw-RL~\cite{openclawrl2026}},
+          \cInc{PinchBench~\cite{pinchbench2026}},
+          \cInc{Claw-Eval~\cite{claweval2026}},
+          \cInc{ClawBench~\cite{clawbench2026}},
+          \cInc{ResearchClawBench~\cite{researchclawbench2026}},
+          \cInc{ZeroClaw~\cite{zeroclaw2026}},
+          \cSaf{PRISM~\cite{openclawprism2026}},
+          \cSaf{ClawWorm~\cite{clawworm2026}},
+          \cInc{Agent Social Networks~\cite{agentsocialnetworks2026}},
+          \cInc{OpenClaw Learn~\cite{openclawlearn2026}},
+          \cTra{CHeaT~\cite{cloakhoneytrap2025}},
+          \cTra{AgentFuzz~\cite{makeagentdefeatagent2025}},
+          \cSaf{MS OpenClaw Safety~\cite{msOpenClawSafety2026}}}}]
+      ]
+    ]
+    [{\textsection7. Human Oversight \& Governance}, fill=red!8
+      [{\textsection7.1 Pre-execution: Approval \& Authority}
+        [{\leafcites{\cSaf{SafeArena~\cite{safearena2025}},
+          \cSaf{InquireMobile~\cite{inquiremobile2025}},
+          \cSaf{ReInAgent~\cite{reinagent2025}},
+          \cSaf{ClawGrip~\cite{shan2026dontletclawgrip}},
+          \cSaf{Agent Privilege Separation~\cite{agentprivsep2026}},
+          \cSaf{PRISM~\cite{openclawprism2026}},
+          \cInc{OpenAI CUA~\cite{openai2025cua}},
+          \cInc{Anthropic computer use~\cite{anthropic2025computeruse}},
+          \cInc{Project Mariner~\cite{google2026mariner}}}}]
+      ]
+      [{\textsection7.2 During Execution: Handoff \& Auditability}
+        [{\leafcites{\cSaf{ClawKeeper~\cite{clawkeeper2026}},
+          \cSaf{OpenClaw audit~\cite{clawaudit2026}},
+          \cSaf{AgentSentinel~\cite{agentsentinel2025}},
+          \cSaf{OS-Sentinel~\cite{ossentinel2025}},
+          \cSaf{SafeArena~\cite{safearena2025}},
+          \cInc{OpenAI CUA~\cite{openai2025cua}},
+          \cInc{Anthropic computer use~\cite{anthropic2025computeruse}},
+          \cInc{Project Mariner~\cite{google2026mariner}}}}]
+      ]
+      [{\textsection7.3 Post-execution: Rollback \& Remediation}
+        [{\leafcites{\cSaf{OS-Harm~\cite{osharm2025}},
+          \cSaf{PRISM~\cite{openclawprism2026}},
+          \cSaf{OpenClaw audit~\cite{clawaudit2026}},
+          \cTra{MCP threat model~\cite{hou2025mcp}}}}]
+      ]
+    ]
+  ]
+\end{forest}

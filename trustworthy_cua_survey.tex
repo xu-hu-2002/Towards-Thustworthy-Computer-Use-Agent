@@ -76,6 +76,8 @@
 \usepackage{multirow}
 \usepackage{graphicx}
 \usepackage{placeins}
+\usepackage{float}
+\usepackage{afterpage}
 \usepackage{pifont}
 \usepackage{wasysym}
 \usepackage{tikz}
@@ -281,7 +283,7 @@
 \begin{document}
 
 \begin{abstract}
-Computer-use agents (CUAs) are moving from research prototypes into early real-world deployment, including self-hosted and open runtimes such as OpenClaw. They connect LLM reasoning to real browsers, desktops, mobile-like environments, and, in some systems, host execution surfaces such as shells and file systems. Synthesizing approximately 160 papers published from January 2023 to March 2026, this survey studies trustworthy CUAs through a deployment-risk lens rather than a capability-module lens. We organize the literature around five trust boundaries that follow the risk propagation chain: External-Content, Action-and-Permission, Memory-and-Personalization, Tool-Skill-and-Ecosystem, and Human-Oversight-and-Governance. Across these boundaries, we analyze risks along five trustworthiness dimensions, namely security, privacy, reliability, controllability, and accountability, and align them through an explicit boundary-by-dimension mapping. We further adapt agent-security properties, access-control and runtime-enforcement models, and memory-loop abstractions into a two-layer formal analytical lens for CUAs, supporting both boundary-level analysis and cross-boundary risk decomposition. Across the current evidence base, indirect prompt injection and unsafe action execution are the most empirically mature risk classes, whereas memory, ecosystem, and governance risks remain unevenly benchmarked. We also identify systematic evaluation gaps in reliability, controllability, accountability, temporal efficiency, recoverability, supervision quality, and ecosystem-level safety, and frame the survey's contributions around a trust-boundary taxonomy, a boundary-by-dimension mapping, a two-layer formal analytical lens, and an evaluation-gap synthesis.
+Computer-use agents (CUAs) are moving from research prototypes into early real-world deployment, including self-hosted and open runtimes such as OpenClaw. They connect LLM reasoning to real browsers, desktops, mobile-like environments, and, in some systems, host execution surfaces such as shells and file systems. Synthesizing approximately 170 papers published from January 2023 to March 2026, this survey studies trustworthy CUAs through a deployment-risk lens rather than a capability-module lens. We organize the literature around five trust boundaries that follow the risk propagation chain: External-Content, Action-and-Permission, Memory-and-Personalization, Tool-Skill-and-Ecosystem, and Human-Oversight-and-Governance. Across these boundaries, we analyze risks along five trustworthiness dimensions, namely security, privacy, reliability, controllability, and accountability, and align them through an explicit boundary-by-dimension mapping. We further adapt agent-security properties, access-control and runtime-enforcement models, and memory-loop abstractions into a two-layer formal analytical lens for CUAs, supporting both boundary-level analysis and cross-boundary risk decomposition. Across the current evidence base, indirect prompt injection and unsafe action execution are the most empirically mature risk classes, whereas memory, ecosystem, and governance risks remain unevenly benchmarked. We also identify systematic evaluation gaps in reliability, controllability, accountability, temporal efficiency, recoverability, supervision quality, and ecosystem-level safety, and frame the survey's contributions around a trust-boundary taxonomy, a boundary-by-dimension mapping, a two-layer formal analytical lens, and an evaluation-gap synthesis.
 \end{abstract}
 
 \keywords{computer-use agents, trustworthy AI, agent safety, OpenClaw}
@@ -294,64 +296,95 @@ Computer-use agents (CUAs) are moving from research prototypes into early real-w
 
 \section{Introduction}
 
-\begin{figure}[t]
+\begin{figure}[!t]
 \centering
-\includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{figures/case_study.pdf}
-\caption{A single running case traced through the five trust-breakdown surfaces of our taxonomy, contrasting CUA-specific failure modes with those of a general LLM agent. Rows follow the risk-propagation chain: external content $\rightarrow$ actions and permissions $\rightarrow$ persistent memory $\rightarrow$ tools, skills, and ecosystems $\rightarrow$ human oversight and governance.}
+\includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{figures/case_study.pdf}
+\caption{A running case traced through the five trust-breakdown surfaces of our taxonomy, contrasting CUA-specific failures with those of a general LLM agent. Rows follow the propagation chain external content $\rightarrow$ actions and permissions $\rightarrow$ persistent memory $\rightarrow$ tools, skills, and ecosystems $\rightarrow$ oversight and governance.}
 \label{fig:running-case}
 \end{figure}
 
 Computer-use agents (CUAs) are emerging as a consequential new class of AI systems. Unlike language-only agents that operate primarily within conversational interfaces, CUAs are designed to perceive interfaces, reason over evolving digital environments, and take actions in real software systems such as browsers, desktops, and mobile-like platforms. This shift substantially expands the practical scope of LLM-based agents: rather than merely generating recommendations or plans, CUAs can now execute multi-step tasks on behalf of users in environments that are interactive, stateful, and often safety-critical.
 
-As shown in Figure~\ref{fig:running-case}, consider a running case in which Alice asks her CUA to process reimbursement emails in her Gmail inbox and submit the results to her company's reimbursement portal. Among the incoming messages is a fake receipt whose accessibility tree surfaces only innocuous headers and body paragraphs, while a hidden line and a visually rendered e-invoice smuggle in a malicious instruction that the agent's combined OCR-and-DOM pipeline nonetheless ingests~\cite{wasp2025,osharm2025}. Acting on this injected instruction, the CUA executes a chain of low-level UI operations, clicking \textit{Forward}, typing the lookalike recipient \texttt{finance-audit@g-mai1.co}, and pressing \textit{Enter}, without triggering any approval or staged control, and forwards the sensitive reimbursement thread to an attacker-controlled domain~\cite{safearena2025}. The poisoned preference derived from this interaction is then silently written into the agent's persistent memory, so that in a later session the same contamination is rehydrated and continues to bias Alice's CUA across tasks~\cite{mem02024,openviking2025}. At the same time, a third-party \texttt{reimburse-autofill} skill installed against the portal undergoes a silent version update that quietly exfiltrates telemetry to a remote server, turning a single user-level incident into an ecosystem-scale supply-chain channel~\cite{agentskillswild2026,skillfortify2026}. By the time human oversight might intervene, irreversible side effects, the email already sent and the telemetry already uploaded, are on record; approval, rollback, and attribution all arrive too late.
+As shown in Figure~\ref{fig:running-case}, consider a \textbf{running case} in which Alice asks her CUA to process reimbursement emails in her Gmail inbox and submit the results to her company's portal. A fake receipt hides a malicious instruction in its accessibility tree and e-invoice image, which the agent's OCR-and-DOM pipeline ingests. Acting on that instruction, the CUA forwards the sensitive thread to a lookalike recipient (\texttt{finance-audit@g-mai1.co}) through raw UI events, without any approval or staged control. The resulting poisoned preference is silently written to persistent memory and rehydrated in later sessions, continuing to bias the agent across tasks. Meanwhile, a third-party \texttt{reimburse-autofill} skill undergoes a silent version update that exfiltrates telemetry, turning one user-level incident into an ecosystem-scale supply-chain channel. By the time human oversight might intervene, the email is sent and the telemetry is uploaded; approval, rollback, and attribution all arrive too late.
 
-Each step in this scenario is grounded in mechanisms already validated in the literature, yet current benchmarks still test them mostly in isolation rather than as one end-to-end propagation chain. In CUA systems, risk enters through untrusted content, becomes consequential through actions and permissions, persists through memory, spreads through the skill ecosystem, and finally exceeds governance safeguards. A purely conversational LLM agent can generate harmful text, but it does not click, type, update persistent preferences, or execute third-party skills against a live portal. The provenance gaps and irreversible side effects in Figure~\ref{fig:running-case} therefore mark a distinct CUA failure surface, not merely a larger-scale version of ordinary LLM risk.
+Each step in this scenario is grounded in mechanisms already validated in the literature, yet current benchmarks still test them mostly in isolation rather than as one end-to-end propagation chain. In CUA systems, risk enters through untrusted content, becomes consequential through actions and permissions, persists through memory, spreads through the skill ecosystem, and exceeds governance safeguards. A purely conversational LLM agent can generate harmful text, but it does not click, type, write persistent memory, or run third-party skills against a live portal.
 
-\FloatBarrier
-
-Trustworthy CUA is also structurally different from its closest neighbors, general LLM agents, GUI agents, and OS agents, and the difference is what makes its trust problem distinctive rather than a rescaling of familiar risks. General LLM agents~\cite{attackdefenselandscape2026} operate primarily through text generation and API-level tool calls; their outputs are language, and harms arise only when downstream systems consume that language, so threat models there center on prompt-level manipulation rather than on live interface state or irreversible device actions. GUI agents~\cite{foundationguisurvey2024,llmbrainedguisurvey2024,nguyen2025gui,trustworthyguisurvey2025} narrow the execution surface to graphical interfaces, often a single modality such as the web, and are still predominantly evaluated on task completion rather than on how an injected instruction turns into a persistent or ecosystem-level consequence. OS agents~\cite{hu2025osagents} emphasize low-level system and device control, typically under stronger host-level assumptions (fixed OS API surfaces, known permission models), and therefore frame safety around privilege management more than around perception of untrusted external content. A CUA sits across all three regimes at once: it ingests live webpages, desktops, and mobile-like interfaces, and acts through clicks, keystrokes, navigation events, shell commands, and file operations, any of which can produce irreversible consequences on real systems. The central challenge is therefore not merely whether the agent can complete a task, but whether it can remain trustworthy while simultaneously operating across untrusted content, consequential actions, persistent memory, and external skills, an interaction regime that none of the three neighboring agent families is scoped to cover.
-
-The central thesis of this paper is that the most useful survey entry point today is \textbf{trustworthy CUA}. We therefore frame the paper as a guiding synthesis rather than a review of a fully stabilized paradigm. Our organizing principle is a deployment-risk lens: \emph{where risks enter, how they become consequences, how they persist, how they amplify, and how they are governed}. This yields five trust boundaries, External-Content, Action-and-Permission, Memory-and-Personalization, Tool-Skill-and-Ecosystem, and Human-Oversight-and-Governance, which we read against five recurring trustworthiness dimensions: security, privacy, reliability, controllability, and accountability. To support that structure, we introduce a formal analytical lens that adapts agent-security properties, access-control and runtime-enforcement models, and memory-loop abstractions to CUA, and extends them with a coupled boundary-risk decomposition for cross-boundary propagation. Figure~\ref{fig:overview} summarizes this organization.
-
-\begin{figure*}[!t]
+\begin{table}[!t]
+\caption{Comparison with the most relevant neighboring surveys. Formal Lens indicates whether the survey introduces an explicit analytical lens.}
+\label{tab:survey-comparison}
 \centering
-\includegraphics[width=0.96\textwidth]{figures/overview.pdf}
-\caption{High-level overview of the survey structure. The five trust boundaries, external content, action and permission, memory and personalization, tool/skill/ecosystem, and human oversight and governance, are organized along the deployment risk propagation path, illustrating how risks enter, become consequences, persist, amplify, and are governed in CUA systems.}
-\Description{A high-level overview diagram showing the survey structure organized around five trust boundaries for trustworthy computer-use agents.}
+\fontsize{5.8}{6.4}\selectfont
+\setlength{\tabcolsep}{1.0pt}
+\renewcommand{\arraystretch}{0.94}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+\textbf{Survey} & \textbf{Object} & \textbf{Primary Lens} & \shortstack{\textbf{CUA}\\\textbf{Scope}} & \shortstack{\textbf{Formal}\\\textbf{Lens}} & \shortstack{\textbf{Risk}\\\textbf{Propagation}} & \shortstack{\textbf{Oversight \&}\\\textbf{Governance}} \\
+\midrule
+Wang et al.~\cite{foundationguisurvey2024} & GUI agent & Workflow view & \xmark & \xmark & \xmark & \xmark \\
+Liu et al.~\cite{llmbrainedguisurvey2024} & GUI agent & Workflow view & \xmark & \xmark & \xmark & \xmark \\
+Nguyen et al.~\cite{nguyen2025gui} & GUI agent & Landscape overview & \xmark & \xmark & \xmark & \xmark \\
+Sager et al.~\cite{sager2025acu} & agent for computer use & Foundations/challenges & \pmark & \xmark & \pmark & \xmark \\
+Hu et al.~\cite{hu2025osagents} & OS agent & System/device view & \pmark & \xmark & \pmark & \pmark \\
+Zhang et al.~\cite{trustworthyguisurvey2025} & GUI agent & Trust-dimension view & \pmark & \xmark & \pmark & \pmark \\
+Kim et al.~\cite{attackdefenselandscape2026} & LLM agent & Threat/defense view & \xmark & \xmark & \cmark & \pmark \\
+\midrule
+\textbf{Hu et al. (Ours)} & \textbf{computer-use agent} & \textbf{Boundary/failure view} & \cmark & \cmark & \cmark & \cmark \\
+\bottomrule
+\end{tabular}
+}
+\medskip
+\parbox{\columnwidth}{\footnotesize\emph{Notation.} Unless otherwise stated, all tables use a common three-level notation: \cmark denotes strong, central, or structurally present coverage; \pmark denotes partial coverage; and \xmark denotes absence or non-central relevance. The exact reading depends on the table's columns.}
+\end{table}
+
+
+As shown in Table~\ref{tab:survey-comparison}, \textbf{computer-use agents are also structurally different from their closest neighbors,} general LLM agents, GUI agents, and OS agents, and that difference is what makes their trust problem distinctive rather than a rescaling of familiar risks. \textbf{General LLM agents}~\cite{attackdefenselandscape2026} operate primarily through text generation and API-level tool calls; their outputs are language, and harms arise only when downstream systems consume that language, so threat models there center on prompt-level manipulation rather than on live interface state or irreversible device actions. \textbf{GUI agents}~\cite{foundationguisurvey2024,llmbrainedguisurvey2024,nguyen2025gui,trustworthyguisurvey2025} narrow the execution surface to graphical interfaces, often a single modality such as the web, and are still predominantly evaluated on task completion rather than on how an injected instruction turns into a persistent or ecosystem-level consequence. \textbf{OS agents}~\cite{hu2025osagents} emphasize low-level system and device control, typically under stronger host-level assumptions (fixed OS API surfaces, known permission models), and therefore frame safety around privilege management more than around perception of untrusted external content.
+
+\textbf{A CUA sits across all three regimes at once:} it ingests live webpages, desktops, and mobile-like interfaces, and acts through clicks, keystrokes, navigation events, shell commands, and file operations, any of which can produce irreversible consequences on real systems. The central challenge is therefore not merely whether the agent can complete a task, but whether it can remain trustworthy while simultaneously operating across untrusted content, consequential actions, persistent memory, and external skills, an interaction regime that none of the three neighboring agent families is scoped to cover.
+
+\textbf{This conceptual distinction is also a trustworthiness distinction.} As later formalized in Section~\ref{sec:core-definitions}, especially Tables~\ref{tab:neighboring-umbrellas} and~\ref{tab:trust-boundary-exposure}, CUA is the only neighboring paradigm simultaneously exposed to the full deployment-risk propagation path and the full trust-boundary stack. Trustworthy CUA therefore cannot be reduced to trustworthy GUI agents, OS agents, or general LLM agents with slightly broader interfaces.
+
+\textbf{Existing related surveys} illuminate adjacent parts of this space: GUI-agent surveys catalog architectures for screen perception and action~\cite{foundationguisurvey2024,llmbrainedguisurvey2024,nguyen2025gui,trustworthyguisurvey2025}; LLM-agent surveys organize planning, memory, and tool-use modules~\cite{attackdefenselandscape2026}; and AI-safety / LLM-safety surveys enumerate prompt-injection, jailbreak, and alignment threats at the model layer. Collectively, they provide rich taxonomies of what an agent is made of and what can go wrong in a model. Yet when read through the lens of a deployed computer-use agent, \textbf{four gaps become visible}. (1) \textbf{Scope}: the boundary between a CUA and its neighbors (LLM agent, GUI agent, OS agent) is almost not formalized, so findings cannot be cleanly transferred in or out. (2) \textbf{Formalism}: there is no shared analytical lens, namely a set of mathematically expressible definitions of risk, failure, and trust, under which claims across works can be compared. (3) \textbf{Deployment risk propagation}: trustworthiness is treated as a property of individual components rather than as a chain in which perception errors, planning flaws, action unsafety, memory leaks, and environment mutations compound along the execution path. (4) \textbf{Oversight and governance}: oversight, accountability, and human-in-the-loop control are folded into generic safety discussions instead of being treated as a first-class architectural concern with its own design surface.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/overview.pdf}
+\caption{Overview of the survey structure. The five trust boundaries, external content, action and permission, memory and personalization, tool/skill/ecosystem, and human oversight and governance, are organized from left to right along the deployment risk propagation path, illustrating how risks enter, become consequences, persist, amplify, and are governed in CUA systems.}
+\Description{An overview diagram showing the survey structure organized around five trust boundaries for trustworthy computer-use agents.}
 \label{fig:overview}
-\end{figure*}
+\end{figure}
+
+Figure~\ref{fig:overview} gives an overview of the survey's organization. Our survey is organized around a different primitive. Rather than taking agent capability modules as the star and bolting trust on as an afterthought, we take the \emph{deployment-risk propagation chain} as the organizing axis, and use a formal analytical lens as its mathematical support. Concretely, we trace risk along five sequential trust boundaries:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Where do risks enter?} (\S\ref{sec:external-content}: External-Content);
+  \item \textbf{How do they become consequences?} (\S\ref{sec:action-permission}: Action-and-Permission);
+  \item \textbf{How do they persist?} (\S\ref{sec:memory}: Memory-and-Personalization);
+  \item \textbf{How do they amplify?} (\S\ref{sec:ecosystem}: Tool-Skill-and-Ecosystem);
+  \item \textbf{How are they governed?} (\S\ref{sec:governance}: Human-Oversight-and-Governance).
+\end{itemize}
+
+\noindent At each boundary, we examine the relevant subset of five recurring trustworthiness dimensions: \textbf{security}, \textbf{privacy}, \textbf{reliability}, \textbf{controllability}, and \textbf{accountability}.
 
 Our key contributions are as follows:
 
 \begin{itemize}[leftmargin=1.5em]
   \item \textbf{We propose a boundary-failure taxonomy for trustworthy CUA}, organized along the deployment risk propagation path into five trust boundaries, shifting the organizing principle from capability modules to deployment risk.
 
-  \item \textbf{We provide a formally grounded analytical lens} by adapting recent agent-security properties~\cite{siu2026formalizing}, access-control models~\cite{seagent2026,agentspec2025,progent2025}, and memory-loop abstractions~\cite{memorysurveycua2026} to the CUA setting. Building on these adapted formalisms, we propose a \emph{coupled boundary-risk decomposition} (Eq.~\ref{eq:coupled-risk}) that captures how failures propagate across trust boundaries.
+  \item \textbf{We introduce a formal analytical lens for trustworthy CUA}, adapting agent-security properties, access-control and runtime-enforcement models, and memory-loop abstractions to the CUA setting, and extending them with a \emph{coupled boundary-risk decomposition} (Eq.~\ref{eq:coupled-risk}) for cross-boundary failure propagation.
 
-  \item \textbf{Within the trust-boundary narrative, we develop a dual-axis survey synthesis} that reads the literature both along five deployment boundaries and across the recurring trustworthiness dimensions of security, privacy, reliability, controllability, and accountability. Across six major CUA system families, this synthesis shows that indirect prompt injection and unsafe action execution are the most empirically mature risk categories, whereas memory, ecosystem, and oversight risks remain analytically motivated but weakly benchmarked.
+  \item \textbf{We develop a dual-axis survey synthesis} that reads the literature both along the five deployment boundaries and across the recurring trustworthiness dimensions of security, privacy, reliability, controllability, and accountability.
 
   \item \textbf{We identify systematic evaluation gaps} across temporal efficiency, supervision quality, recoverability, privacy, and ecosystem safety, arguing that benchmark-to-deployment realism should become a first-class evaluation concern.
 
   \item \textbf{We argue that governance is an architectural requirement, not a detachable ethics layer.} Once a CUA simultaneously possesses device-level permissions, persistent memory, and external skills, approval, handoff, rollback, and policy enforcement become inseparable from system design.
 \end{itemize}
 
-
-
-
-\smallskip
-\noindent\textbf{Paper organization.}
-Section~2 first defines computer-use agents and trustworthy CUA, then compares this survey with adjacent reviews, positions the scoped corpus and its empirical anchors, and finally introduces the formal analytical bridge that connects this corpus to the boundary-failure taxonomy. Sections~3 through~7 proceed along the five trust boundaries in sequence. Section~8 synthesizes the evaluation landscape. Section~9 discusses mitigation patterns and open problems. Section~10 concludes.
-
-\smallskip
-\noindent\textbf{Comparison with other related surveys.}
-Existing related surveys illuminate adjacent parts of this space, but they do not jointly fix the scope of CUA, organize the field around deployment-risk propagation, and ground that organization in a formal analytical lens. That gap matters because trustworthy CUA is not yet a fully stabilized paradigm: its conceptual boundary, evidence base, and governance requirements are still being actively negotiated. Section~\ref{sec:related-surveys} compares this survey with the most closely related reviews, and Section~\ref{sec:scope-positioning} clarifies the scoped corpus and empirical anchors used throughout the paper.
-
-
-
+\FloatBarrier
 
 \section{Definitions, Scope, and Analytical Lens}
 
-Before unfolding the boundary-failure taxonomy, this section anchors the analytical object. We first define the core concepts used throughout the paper, then compare this survey with adjacent reviews, position the corpus relative to neighboring survey categories and empirical anchors, and finally introduce the analytical bridge that connects this scoped corpus to the boundary-failure taxonomy.
+Before unfolding the boundary-failure taxonomy, this section anchors the analytical object. We first define the core concepts used throughout the paper, then delimit the survey scope and corpus boundary, and finally introduce the formal analytical lens that organizes the boundary-failure taxonomy.
 
 \subsection{Core Definitions}
 \label{sec:core-definitions}
@@ -404,7 +437,7 @@ The overall execution loop thus proceeds as:
 \]
 until the agent emits $a_t = \texttt{done}$ or a maximum horizon~$H$ is reached.
 
-This definition is intentionally narrower than the broadest GUI-agent umbrella: it requires contemporary agentic planning and multimodal reasoning (the policy~$\pi$ must handle open-ended goals over multi-step horizons), thereby excluding specialized operator assistants, fixed-script workflow automation, and rule-based GUI testing tools~\cite{sager2025acu}. It is also narrower than generalized tool-use or API-based agents, because it requires that the action space~$\mathcal{U}$ be grounded in interface-level interactions rather than programmatic interfaces alone. At the same time, it is broader than purely web-based agents, as the environment~$\mathcal{E}$ encompasses desktop and mobile platforms alongside browsers. The survey's second organizing axis is introduced next: the trustworthiness dimensions that later support the boundary-by-dimension mapping in Table~\ref{tab:boundary-dimension-map}.
+This definition is intentionally narrower than the broadest GUI-agent umbrella: it requires contemporary agentic planning and multimodal reasoning (the policy~$\pi$ must handle open-ended goals over multi-step horizons), thereby excluding specialized operator assistants, fixed-script workflow automation, and rule-based GUI testing tools~\cite{sager2025acu}. It is also narrower than generalized LLM agents that act through tools or APIs, because it requires that the action space~$\mathcal{U}$ be grounded in interface-level interactions rather than programmatic interfaces alone. At the same time, it is broader than purely web-based agents, as the environment~$\mathcal{E}$ encompasses desktop and mobile platforms alongside browsers. The survey's second organizing axis is introduced next: the trustworthiness dimensions that later support the boundary-by-dimension mapping in Table~\ref{tab:boundary-dimension-map}.
 
 \smallskip
 \noindent\textbf{Definition 2 (Trustworthy Computer-Use Agent).}
@@ -428,74 +461,9 @@ where each component captures a deployment-relevant requirement:
 
 These five dimensions are not independent; they interact and sometimes conflict in deployment. A system that maximizes personalization through richer persistent memory may increase privacy risk as $m_t$ grows. A system that maximizes autonomy through a more permissive gating function~$\Gamma$ may reduce controllability as fewer actions require confirmation. The trustworthy CUA problem is therefore not about optimizing any single dimension but about managing their interactions across the deployment lifecycle. This definition serves as the analytical anchor for the boundary-failure taxonomy: each of the five trust boundaries in Sections~3 through~7 maps onto one or more of these dimensions, and Table~\ref{tab:boundary-dimension-map} makes that coupling explicit for the survey sections and later evaluation analysis.
 
-\subsection{Comparison with Related Surveys}
-\label{sec:related-surveys}
+Tables~\ref{tab:neighboring-umbrellas} and~\ref{tab:trust-boundary-exposure} then position computer-use agents relative to neighboring agent paradigms. The goal is not to force a rigid taxonomy over partially overlapping traditions. Rather, the two tables clarify, from complementary angles, why CUA systems present a uniquely comprehensive set of trustworthiness challenges.
 
-Table~\ref{tab:survey-comparison} situates this survey against the most relevant neighboring surveys. The main distinction is not simply broader coverage, but three design choices: an explicit CUA scope, a boundary/failure organizing lens, and a formal lens that structures the survey's analysis.
-
-\begin{table}[!t]
-\caption{Comparison with the most relevant neighboring surveys. \cmark~=~central or explicitly covered, \pmark~=~partially or indirectly addressed, \xmark~=~not a focus. Formal Lens indicates whether the survey explicitly introduces a formal analytical lens used to structure the survey's analysis.}
-\label{tab:survey-comparison}
-\centering
-\fontsize{6.6}{7.4}\selectfont
-\setlength{\tabcolsep}{2pt}
-\renewcommand{\arraystretch}{1.05}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{@{}lcccccc@{}}
-\toprule
-\textbf{Survey} & \textbf{Object} & \textbf{Primary Lens} & \shortstack{\textbf{CUA}\\\textbf{Scope}} & \shortstack{\textbf{Formal}\\\textbf{Lens}} & \shortstack{\textbf{Risk}\\\textbf{Propagation}} & \shortstack{\textbf{Oversight \&}\\\textbf{Governance}} \\
-\midrule
-Wang et al.~\cite{foundationguisurvey2024} & GUI agent & Workflow view & \xmark & \xmark & \xmark & \xmark \\
-Liu et al.~\cite{llmbrainedguisurvey2024} & GUI agent & Workflow view & \xmark & \xmark & \xmark & \xmark \\
-Nguyen et al.~\cite{nguyen2025gui} & GUI agent & Landscape overview & \xmark & \xmark & \xmark & \xmark \\
-Sager et al.~\cite{sager2025acu} & computer-use agent & Foundations/challenges & \pmark & \xmark & \pmark & \xmark \\
-Hu et al.~\cite{hu2025osagents} & OS agent & System/device view & \pmark & \xmark & \pmark & \pmark \\
-Zhang et al.~\cite{trustworthyguisurvey2025} & GUI agent & Trust-dimension view & \pmark & \xmark & \pmark & \pmark \\
-Kim et al.~\cite{attackdefenselandscape2026} & LLM agent & Threat/defense view & \xmark & \xmark & \cmark & \pmark \\
-\midrule
-\textbf{Hu et al. (Ours)} & \textbf{computer-use agent} & \textbf{Boundary/failure view} & \cmark & \cmark & \cmark & \cmark \\
-\bottomrule
-\end{tabular}
-}
-\medskip
-\parbox{\columnwidth}{\footnotesize\raggedright\emph{Note.} ``Object'' denotes the survey's main analytical target: \emph{GUI agent} surveys focus on interface-centric interaction, \emph{OS agent} surveys on broader system/device control, \emph{LLM agent} surveys on general agentic systems not tied to interface grounding, and \emph{computer-use agent} surveys on open-ended execution through live browser/desktop/mobile interfaces. Section~\ref{sec:core-definitions} gives the core CUA definition, and Section~\ref{sec:scope-positioning} explains neighboring umbrellas and exclusions.}
-\end{table}
-
-The survey landscape around this field is already rich. Multiple systematic surveys cover GUI agents from the perspectives of frameworks, components, training, and evaluation~\cite{foundationguisurvey2024,llmbrainedguisurvey2024,nguyen2025gui}. OS-agent surveys unify cross-device interaction perspectives~\cite{hu2025osagents}. A survey specifically focused on trustworthy GUI agents has also appeared~\cite{trustworthyguisurvey2025}. Broader surveys of attack and defense in agentic AI are also now emerging~\cite{attackdefenselandscape2026}, but they do not by themselves resolve which risk propagation path is structurally distinctive for interface-grounded computer use. This means a new survey can no longer justify itself through topic novelty alone. Nevertheless, the existing body of work leaves three structural gaps. First, in the prior literature the scope boundary of CUA has not been rigorously defined; the relationship between ``computer-use agents,'' ``GUI agents,'' and ``OS agents'' varies across surveys, leaving the analytical object ambiguous (a gap that Definition~1 in \S2.1 addresses). Second, the risk propagation path has not been systematically characterized: existing organizational approaches, whether by module, by benchmark, or by broad trust dimensions, are well-suited for tracking capability progress but poorly equipped to explain how deployment risks propagate from one stage to the next. How does an injected instruction become a harmful action? How are the consequences of a harmful action preserved long-term through memory? How do risks in memory amplify as the tool and skill ecosystem expands? This propagation chain requires a new organizing principle. Third, the maturity levels of evidence have not been distinguished; some failure mechanisms have stable empirical recurrence (e.g., prompt injection), others are analytically synthesized (e.g., memory poisoning), and still others are governance-oriented requirements (e.g., rollback and policy enforcement). Conflating these levels risks overstating the field's overall readiness. Concretely, the survey is bounded to a main corpus of approximately 160 papers from January 2023 through March 2026, with the detailed inclusion logic made explicit in Section~\ref{sec:scope-positioning}.
-
-This comparison fixes the role of the present survey. We do not attempt another broad overview of GUI agents, OS agents, or agentic-AI safety in general. Instead, we delimit a computer-use-agent corpus, organize it by the risk propagation chain that becomes distinctive under live interface-level action, and use a formal lens to keep boundary-level synthesis, cross-boundary propagation, and evidence maturity in the same analytical frame. Section~\ref{sec:scope-positioning} makes that corpus boundary explicit, and Section~\ref{sec:formal-framework} turns the scoped corpus into the survey's trust-boundary roadmap.
-
-
-\subsection{Scope and Positioning}
-\label{sec:scope-positioning}
-
-This subsection delineates what falls inside the survey corpus, what remains outside it, and why these scope choices should be established before the later analytical bridge to the boundary-failure taxonomy.
-
-\blocksubsubsection{Field Formation and Empirical Positioning}
-
-CUAs act through the same digital interfaces that humans use, reading screenshots, DOM signals, accessibility trees, or other device states and completing tasks through clicks, keystrokes, scrolling, browser actions, and cross-application navigation. In recent years, this interaction paradigm has rapidly expanded from web-centric research prototypes to systems spanning browsers, desktops, and mobile-like environments. That transition is especially visible in self-hosted and open runtimes such as Browser Use, Midscene, and OpenClaw, which make it increasingly easy to package interface control, memory, and external skills into a deployable agent stack~\cite{browseruse2025,midscene2025,openclaw2026}. In these settings, trustworthy execution is not hypothetical: the agent may ingest untrusted content, invoke externally sourced skills, and act with the credentials and permissions assigned to it. This trajectory also encompasses foundational GUI perception and action models (CogAgent, SeeClick, ShowUI, OS-ATLAS, UI-TARS, UI-TARS-2, AutoGLM), open computer-use frameworks (Cradle, OS-Copilot, Agent~S/S2/S3, UFO2, Computer-Using World Model), large-scale training and scaling pipelines (ScaleCUA, OpenCUA, Learn-by-Interact, ComputerRL, PC~Agent-E, DART-GUI, AReaL, EvoCUA, Fara-7B, GTA1, Agent Alpha), and commercial systems (OpenAI CUA, Anthropic computer use, Project Mariner). Figure~\ref{fig:cua-evolution} provides a chronological overview of this rapid evolution from 2023 to 2026. The pace of capability growth is remarkable, and the execution surface has broadened in step. Contemporary CUA systems increasingly go beyond graphical interface manipulation: they can execute shell commands, access local file systems, and interact with communication and productivity software, thereby bridging the gap between user intent and low-level system operations in a manner loosely analogous to how an operating system mediates between users and hardware. Every click, keystroke, command execution, and file operation can produce irreversible real-world consequences, which is precisely why the trustworthiness challenges outlined in Section~1 intensify as the capability frontier advances.
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=\textwidth]{figures/landscape.pdf}
-\caption{Research landscape of computer-use agents from 2023 to 2026, viewed through the lens of trustworthiness. The diagonal trunk traces four broad phases, colour-coded by year: \textcolor[HTML]{999999}{\textbf{gray}} (2023, capability foundations), \textcolor[HTML]{44AA66}{\textbf{green}} (2024, computer-use expansion and early trust concerns), \textcolor[HTML]{4488CC}{\textbf{blue}} (2025, safety benchmarks, deployment controls, and early deployment), and \textcolor[HTML]{8844AA}{\textbf{purple}} (2026, self-hosted ecosystems, memory, and governance).}
-\Description{A diagonal timeline graphic covering 2023 through 2026 for representative computer-use-agent research, viewed through the lens of trustworthiness. Four colour-coded year nodes (gray, green, blue, purple) sit on a curved S-shape trunk flowing from the top-left to the bottom-right. Each year node branches into month-range groups that connect to dashed-border paper boxes on alternating sides of the trunk. The timeline is read in four broad phases: capability foundations; computer-use expansion and early trust concerns; safety benchmarks, deployment controls, and early deployment; and self-hosted ecosystems, memory, and governance. Side banners mark representative subthemes within each phase.}
-\label{fig:cua-evolution}
-\end{figure*}
-
-This rapid capability growth has not been matched by a comparable expansion of trustworthiness evaluation. Cross-system capability comparison today still rests primarily on a single benchmark, OSWorld~\cite{osworld2024}, which is the only suite on which most frontier CUA systems (UI-TARS, Agent~S2/S3, OpenCUA, ScaleCUA, ComputerRL, EvoCUA, OpenAI CUA, Anthropic computer use) have all been evaluated. By contrast, direct trustworthiness benchmarks remain narrow in coverage: SafeArena reports results for only five base models~\cite{safearena2025}, ST-WebAgentBench covers three web agents~\cite{stwebagentbench2025}, and Personalized Agent Security Bench (PASB) evaluates a single framework with three backbones~\cite{doubleagent2026}. The frontier capability systems and the systems that have actually been safety-tested are largely disjoint sets. We therefore adopt a paired-reading strategy throughout this survey: OSWorld serves as the capability anchor for cross-system comparison, and SafeArena serves as the safety counterpoint that exposes harmful execution and refusal trade-offs. The juxtaposition, developed in detail in Section~8.2 (Tables~\ref{tab:osworld-landscape} and~\ref{tab:safearena-landscape}), makes the central empirical claim of the survey concrete: \emph{capability gains on OSWorld have not translated into commensurate trustworthiness gains on the systems where they have been measured, and the systems where capability has advanced furthest have largely not been safety-tested at all}. Throughout the survey we treat the two benchmarks as complementary lenses rather than directly comparable scores.
-
-\blocksubsubsection{Neighboring Umbrellas and Exclusions}
-
-These neighboring umbrellas can be visualized schematically, but the comparison should not be read as a strict chain of nested sets. Agentic systems remain the broadest frame. Within that frame, GUI agents, OS agents, and tool-use or API agents overlap only partially because they emphasize different execution substrates and environment scopes. Computer-use agents, as defined here, refer to the subset centered on open-ended task execution through live interface-level or other low-level device interaction in browser, desktop, and mobile environments.
-
-The distinction matters because the trustworthy deployment problem is shaped by interface-level action. Browser benchmarks such as WebArena and WebVoyager, operating-system environments such as OSWorld and Windows Agent Arena, and mobile or dynamic environments such as AndroidWorld make the agent responsible for operating a real or realistic interface rather than merely selecting an API call~\cite{webarena2023,webvoyager2024,osworld2024,windowsarena2024,androidworld2024}. In these settings, the gap between \emph{understanding} and \emph{acting safely} becomes central.
-
-Tables~\ref{tab:neighboring-umbrellas} and~\ref{tab:trust-boundary-exposure} together position computer-use agents relative to neighboring agent paradigms. The goal is not to force a rigid taxonomy over partially overlapping traditions. Rather, the two tables clarify, from complementary angles, why CUA systems present a uniquely comprehensive set of trustworthiness challenges.
-
-Table~\ref{tab:neighboring-umbrellas} compares agent types along seven deployment-relevant dimensions that trace how risks propagate: from perception of interface state, through action execution, cross-application navigation, and real-time environmental dynamics, to irreversible real-world effects, persistent memory across sessions, and ecosystem-level skill reuse. GUI agents and OS agents share the first few dimensions with CUA, but neither carries persistent cross-session memory nor integrates external skill ecosystems. API and workflow agents, conversely, may involve memory and tool use but lack the interface-level perception and action channels that make CUA risks physically consequential. Only computer-use agents score across all seven columns, which is precisely why their trustworthiness problem cannot be reduced to any single neighboring paradigm.
-
-\begin{table*}[!t]
+\begin{table}[H]
 \caption{Comparison among computer-use agents with other agents along the deployment risk propagation path. Columns trace how risks enter (perception), become consequences (actions, navigation, environment), produce irreversible effects, persist (memory), and amplify (ecosystem). CUA is the only paradigm that simultaneously exposes all seven dimensions.}
 \label{tab:neighboring-umbrellas}
 \centering
@@ -511,14 +479,20 @@ Table~\ref{tab:neighboring-umbrellas} compares agent types along seven deploymen
 GUI agents & \cmark & \cmark & \pmark & \pmark & \pmark & \xmark & \xmark \\
 OS agents & \cmark & \cmark & \cmark & \cmark & \pmark & \pmark & \xmark \\
 Agents for computer use & \pmark & \cmark & \pmark & \pmark & \pmark & \xmark & \xmark \\
-API / workflow agents & \xmark & \xmark & \xmark & \xmark & \pmark & \pmark & \pmark \\
+LLM agent & \xmark & \xmark & \xmark & \xmark & \pmark & \pmark & \pmark \\
 \midrule
 \textbf{Computer-use agents} & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
 \bottomrule
 \end{tabular}
-\medskip
-\captionof{table}{Trust-boundary exposure across agent paradigms. Each column corresponds to one of the five trust boundaries defined in this survey (Sections~3--7). \cmark~=~structurally exposed, \pmark~=~partially exposed, \xmark~=~not a primary concern. CUA is the only paradigm exposed to the full risk propagation chain.}
+\end{table}
+
+\begin{table}[H]
+\caption{Trust-boundary exposure across agent paradigms. Each column corresponds to one of the five trust boundaries defined in this survey (Sections~3--7). CUA is the only paradigm exposed to the full risk propagation chain.}
 \label{tab:trust-boundary-exposure}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
 \begin{tabular}{@{}l@{\hskip 4pt}*{5}{c}@{}}
 \toprule
 \multirow{2}{*}{\textbf{Object}}
@@ -528,165 +502,32 @@ API / workflow agents & \xmark & \xmark & \xmark & \xmark & \pmark & \pmark & \p
 GUI agents & \cmark & \pmark & \xmark & \xmark & \xmark \\
 OS agents & \cmark & \cmark & \pmark & \xmark & \pmark \\
 Agents for computer use & \cmark & \pmark & \xmark & \xmark & \xmark \\
-API / workflow agents & \pmark & \pmark & \pmark & \pmark & \xmark \\
+LLM agent & \pmark & \pmark & \pmark & \pmark & \xmark \\
 \midrule
 \textbf{Computer-use agents} & \cmark & \cmark & \cmark & \cmark & \cmark \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
-Table~\ref{tab:trust-boundary-exposure} translates these deployment dimensions into the five trust boundaries that organize the remainder of this survey (Sections~3--7). The shift from ``what capabilities does the agent have'' to ``where does trust break'' is deliberate: two agent types may share the same capability column in Table~\ref{tab:neighboring-umbrellas} yet differ sharply in boundary exposure. For example, both OS agents and CUA share cross-application navigation, but only CUA systems routinely integrate external skill ecosystems (\S6) and therefore face ecosystem-amplified risks. Similarly, API agents may maintain persistent state, yet their lack of interface-level action means the action-and-permission boundary (\S4) is only partially relevant. The bottom row of Table~\ref{tab:trust-boundary-exposure} shows that CUA is the only paradigm structurally exposed to all five boundaries, external content, action and permission, memory and personalization, tool/skill ecosystem, and human oversight and governance, which is why the full risk propagation chain, rather than any single boundary, must serve as the survey's organizing principle.
+With the analytical object and its comparative exposure profile fixed, Section~\ref{sec:scope-positioning} turns to corpus construction and scope delimitation.
 
-From a corpus-boundary view, this survey is therefore narrower than the broader GUI-agent, OS-agent, and agents-for-computer-use umbrellas. We focus on systems whose primary execution path runs through live interface-level or other low-level device interaction. Trustworthiness is the organizing lens applied to this CUA corpus, rather than a separate umbrella that replaces it~\cite{foundationguisurvey2024,llmbrainedguisurvey2024,nguyen2025gui,sager2025acu,hu2025osagents}. Pure workflow agents, pure API agents, and pure code agents remain outside the main corpus unless they are explicitly evaluated in computer-use settings. They can still appear as contextual contrast when discussing verification, orchestration, or memory, but they do not determine the structure of the survey.
 
-\blocksubsubsection{Corpus Construction and Evidence-Sourcing Principle}
 
-\smallskip
-\noindent\textbf{Corpus construction and temporal coverage.}
-This survey is not intended as a PRISMA-style systematic review with a fixed retrieval protocol. Rather, it provides a bounded synthesis of the trustworthy computer-use-agent literature constructed through iterative expert search. The primary sources are arXiv, the ACM Digital Library, Google Scholar, Semantic Scholar, and DBLP. The main corpus was built around two groups of keyword combinations: (i)~agent-type terms including \emph{computer-use agent}, \emph{GUI agent}, \emph{OS agent}, \emph{browser agent}, \emph{desktop agent}, \emph{mobile agent}, and \emph{web agent}; and (ii)~trustworthiness-related terms including \emph{safety}, \emph{security}, \emph{prompt injection}, \emph{attack}, \emph{memory}, \emph{privacy}, \emph{tool use}, \emph{oversight}, and \emph{governance}. Pairwise combinations of terms from the two groups formed the core search queries. We supplemented this core search with targeted retrieval from the proceedings of four major systems-security venues (CCS, USENIX Security, IEEE S\&P, and NDSS) for agent-relevant security work, as well as selected GitHub repositories and audit reports for ecosystem-level evidence that is not yet captured in traditional publication databases. The temporal focus is January 2023 through March 2026, which covers the period in which LLM-based computer-use systems consolidated as a coherent research line across browser, desktop, and mobile-like environments. The resulting main survey corpus comprises approximately 160 papers spanning foundational models, open frameworks, training pipelines, memory systems, tool ecosystems, safety benchmarks, and governance analyses. A small number of audit reports and repository-native artifacts are included only when they provide ecosystem-level evidence unavailable in archival papers. Earlier GUI automation, operator-assistant, and broader agent papers are included only when they provide historical context, definitional contrast, or direct conceptual support for trustworthiness-relevant mechanisms.
 
-\smallskip
-\noindent\textbf{Evidence-sourcing principle.}
-Because trustworthy CUA is a nascent area, the strongest available evidence for several failure mechanisms originates outside the CUA literature proper. For example, formal analyses of prompt injection attacks and defenses come from the systems-security community~\cite{liuyupei2024formalizing,struq2025,secalign2025}; knowledge-base poisoning evidence comes from retrieval-augmented generation research~\cite{poisonedrag2025}; and multi-turn escalation attacks are best documented in general LLM safety work~\cite{crescendo2025}. We deliberately include such \emph{transferred evidence} when three conditions hold: (i)~the failure mechanism is structurally present in CUA execution (e.g., the agent processes untrusted external content, retrieves from persistent memory, or selects among external tools); (ii)~no CUA-native study yet provides equivalent empirical depth; and (iii)~the gap between the source setting and the CUA setting is explicitly discussed in the text so that the reader can judge transferability. Throughout the paper, we are careful to distinguish CUA-native empirical evidence from transferred evidence and from analytical categories that remain under-benchmarked in CUA-specific settings. This three-way distinction is a deliberate design choice: it prevents the survey from overstating the maturity of the field while still incorporating the best available knowledge about each failure mechanism.
+\subsection{Survey Scope}
+\label{sec:scope-positioning}
 
-\blocksubsubsection{Representative CUA System Families Covered in This Survey}
+This survey is not intended as a PRISMA-style systematic review with a fixed retrieval protocol. Rather, it provides a bounded synthesis of the trustworthy computer-use-agent literature constructed through iterative expert search. The primary sources are arXiv, the ACM Digital Library, Google Scholar, Semantic Scholar, and DBLP. We organized the search keywords into two groups. Group~(1) covered agent terms, including \emph{computer-use agent}, \emph{GUI agent}, \emph{OS agent}, \emph{browser agent}, \emph{desktop agent}, \emph{mobile agent}, and \emph{web agent}. Group~(2) covered trustworthiness terms, including \emph{safety}, \emph{security}, \emph{prompt injection}, \emph{attack}, \emph{memory}, \emph{privacy}, \emph{tool use}, \emph{oversight}, and \emph{governance}. Core queries were formed by pairing one term from Group~(1) with one term from Group~(2). We supplemented this core search with targeted retrieval from the proceedings of four major systems-security venues (CCS, USENIX Security, IEEE S\&P, and NDSS) for agent-relevant security work, as well as selected GitHub repositories and audit reports for ecosystem-level evidence that is not yet captured in traditional publication databases. The temporal focus is January 2023 through March 2026, which covers the period in which LLM-based computer-use systems consolidated as a coherent research line across browser, desktop, and mobile-like environments. The resulting main survey corpus comprises approximately 170 papers spanning foundational models, open frameworks, training pipelines, memory systems, tool ecosystems, safety benchmarks, and governance analyses. A small number of audit reports and repository-native artifacts are included only when they provide ecosystem-level evidence unavailable in archival papers. Earlier GUI automation, operator-assistant, and broader agent papers are included only when they provide historical context, definitional contrast, or direct conceptual support for trustworthiness-relevant mechanisms.
 
-Table~\ref{tab:cua-system-families} makes the coverage boundary concrete by mapping the seven system families discussed throughout the paper, revealing the breadth of the CUA ecosystem that trustworthiness must account for. The seven families span perception and grounding, frameworks, training pipelines, memory systems, skill ecosystems, safety infrastructure, benchmarks, and commercial deployments. Together they show that trustworthy CUA is not a single-module problem but one that sits on top of a broad and rapidly growing infrastructure stack. This table serves a deliberately different purpose from the boundary-failure taxonomy (Figure~\ref{fig:taxonomy}): the table maps \emph{what systems are in scope} (the system view), while the taxonomy maps \emph{where trust breaks} across those systems (the risk view). The two representations are complementary: every failure mechanism in the taxonomy can be traced back to one or more system families in the table, and every system family exposes risks that propagate through multiple trust boundaries.
-
-\begin{table*}[!ht]
-\caption{The systems landscape underlying trustworthy CUA. Seven families span from perception to governance, showing the breadth of infrastructure on which trustworthiness depends. This table maps \emph{what systems are in scope}; the boundary-failure taxonomy (Figure~\ref{fig:taxonomy}) maps \emph{where trust breaks} across them. \colorbox{evSaf!15}{Green-shaded} systems are safety-targeted; unshaded systems are capability systems whose designs or findings have trustworthiness implications.}
-\label{tab:cua-system-families}
+\begin{figure*}[!t]
 \centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\textwidth}{@{}L{2.5cm} X L{3.8cm}@{}}
-\toprule
-\textbf{Family} & \textbf{Representative systems} & \textbf{Trustworthiness relevance} \\
-\midrule
-%% ── Family 1 ──
-Perception \& Grounding &
-CogAgent~\cite{cogagent2023},
-SeeClick~\cite{seeclick2024},
-ShowUI~\cite{showui2024},
-OS-ATLAS~\cite{osatlas2024},
-UI-TARS~\cite{uitars2025},
-UI-TARS-2~\cite{uitars22025},
-AutoGLM~\cite{autoglm2024} &
-Grounding reliability determines whether downstream actions match user intent or are misdirected by deceptive interface states. \\
-\midrule
-%% ── Family 2 ──
-CUA Frameworks \& Runtime Architecture &
-Agent~S~\cite{agents2024},
-Agent~S2~\cite{agents22025},
-Agent~S3~\cite{agents32026},
-UFO2~\cite{ufo2025},
-Browser-Use~\cite{browseruse2025},
-Computer-Using World Model~\cite{cuwm2026} &
-Planning, routing, staged control, and cross-application execution define the runtime architecture on which safety mechanisms must be layered. \\
-\midrule
-%% ── Family 3 ──
-Training, Scaling \& Reward &
-ScaleCUA~\cite{scalecua2025},
-OpenCUA~\cite{opencua2025},
-Learn-by-Interact~\cite{learnbyinteract2025},
-ComputerRL~\cite{computerrl2025},
-AReaL~\cite{areal2025},
-EvoCUA~\cite{evocua2026},
-Agent Alpha~\cite{agentalpha2026},
-PC~Agent-E~\cite{pcaegente2025},
-DART-GUI~\cite{dartgui2025} &
-Trajectories, RL, search, and test-time computation rapidly raise agent power, widening the gap between capability gains and trustworthy evaluation. \\
-\midrule
-%% ── Family 4 ──
-Memory, Personalization \& Privacy &
-Mem0~\cite{mem02024},
-OpenViking~\cite{openviking2025},
-AgentProg~\cite{agentprog2025},
-MemPO~\cite{mempo2026},
-A-MEM~\cite{amem2025},
-Auto-scaling Memory~\cite{autoscalememory2025},
-HyMEM~\cite{hymem2026},
-MGA~\cite{mga2025},
-Chain-of-Memory~\cite{chainofmemory2025},
-PersonalAlign~\cite{personalalign2026},
-EchoTrail-GUI~\cite{echotrailgui2025},
-Agent-ScanKit~\cite{agentscankit2025} &
-Long-horizon assistance depends on persistent state, but that same state creates staleness, privacy leakage, provenance, and poisoning concerns. \\
-\midrule
-%% ── Family 5 ──
-Skill Ecosystems \& Supply-Chain Security &
-CUA-Skill~\cite{cuaskill2026},
-Midscene.js~\cite{midscene2025},
-OpenCUA~\cite{opencua2025},
-OpenClaw~\cite{openclaw2026},
-OpenClaw-RL~\cite{openclawrl2026},
-\colorbox{evSaf!15}{IronClaw~\cite{ironclaw2026}},
-\colorbox{evSaf!15}{SecureClaw~\cite{secureclaw2026}},
-\colorbox{evSaf!15}{ZeroClaw~\cite{zeroclaw2026}},
-\colorbox{evSaf!15}{PRISM~\cite{openclawprism2026}},
-\colorbox{evSaf!15}{ClawKeeper~\cite{clawkeeper2026}},
-\colorbox{evSaf!15}{SkillFortify~\cite{skillfortify2026}},
-\colorbox{evSaf!15}{openclaw-carapace~\cite{openclawcarapace2026}},
-\colorbox{evSaf!15}{ClawWorm~\cite{clawworm2026}},
-\colorbox{evSaf!15}{Trojans Whisper~\cite{trojanswhisper2026}},
-\colorbox{evSaf!15}{Skills in the Wild~\cite{agentskillswild2026}} &
-Trustworthiness depends on reusable skills, ecosystem hardening, and supply-chain integrity rather than on the base model alone. \\
-\midrule
-%% ── Family 6 ──
-Safety Infrastructure \& Governance &
-\colorbox{evSaf!15}{SEAgent~\cite{seagent2026}},
-\colorbox{evSaf!15}{AgentSpec~\cite{agentspec2025}},
-\colorbox{evSaf!15}{Progent~\cite{progent2025}},
-\colorbox{evSaf!15}{STEVE~\cite{steve2025}},
-\colorbox{evSaf!15}{AgentSentinel~\cite{agentsentinel2025}},
-\colorbox{evSaf!15}{ToolSafe~\cite{toolsafe2026}},
-\colorbox{evSaf!15}{OS-Sentinel~\cite{ossentinel2025}},
-\colorbox{evSaf!15}{SafeClaw-R~\cite{safeclawr2026}},
-\colorbox{evSaf!15}{QuadSentinel~\cite{quadsentinel2025}},
-\colorbox{evSaf!15}{Agent Privilege Separation~\cite{agentprivsep2026}},
-\colorbox{evSaf!15}{NLAHs~\cite{nlah2026}},
-\colorbox{evSaf!15}{ClawGrip~\cite{shan2026dontletclawgrip}},
-\colorbox{evSaf!15}{InquireMobile~\cite{inquiremobile2025}},
-\colorbox{evSaf!15}{ReInAgent~\cite{reinagent2025}},
-\colorbox{evSaf!15}{RecAgent~\cite{recagent2025}} &
-Once a CUA has device-level permissions, persistent memory, and external skills, approval, enforcement, handoff, and rollback become architectural requirements, not optional overlays. \\
-\midrule
-%% ── Family 7 ──
-Benchmarks \& Commercial Deployments &
-OSWorld~\cite{osworld2024},
-WebArena~\cite{webarena2023},
-AndroidWorld~\cite{androidworld2024},
-ScreenSpot-Pro~\cite{screenspotpro2025},
-\colorbox{evSaf!15}{SafeArena~\cite{safearena2025}},
-\colorbox{evSaf!15}{OS-Harm~\cite{osharm2025}},
-\colorbox{evSaf!15}{WASP~\cite{wasp2025}},
-\colorbox{evSaf!15}{SecureWebArena~\cite{securewebarena2025}},
-\colorbox{evSaf!15}{SusBench~\cite{susbench2025}},
-\colorbox{evSaf!15}{DECEPTICON~\cite{decepticon2025}},
-\colorbox{evSaf!15}{PASB~\cite{doubleagent2026}},
-\colorbox{evSaf!15}{MemGUI-Bench~\cite{memguibench2026}},
-\colorbox{evSaf!15}{GUIGuard~\cite{guiguard2026}},
-\colorbox{evSaf!15}{WorldGUI~\cite{worldgui2025}},
-\colorbox{evSaf!15}{BeSafe-Bench~\cite{besafebench2026}},
-\colorbox{evSaf!15}{ST-WebAgentBench~\cite{stwebagentbench2025}},
-OpenAI CUA~\cite{openai2025cua},
-Anthropic computer use~\cite{anthropic2025computeruse},
-Project Mariner~\cite{google2026mariner},
-PinchBench~\cite{pinchbench2026},
-ClawEval~\cite{claweval2026},
-ClawBench~\cite{clawbench2026} &
-These artifacts define the evidence base for judging whether growing capability translates into safe, robust, and governable deployment. \\
-\bottomrule
-\end{tabularx}
-\end{table*}
+\includegraphics[width=\textwidth]{figures/landscape.pdf}
+\caption{Research landscape of computer-use agents from 2023 to 2026, viewed through the lens of trustworthiness. The diagonal trunk traces four broad phases, colour-coded by year: \textcolor[HTML]{999999}{\textbf{gray}} (2023, capability foundations), \textcolor[HTML]{44AA66}{\textbf{green}} (2024, computer-use expansion and early trust concerns), \textcolor[HTML]{4488CC}{\textbf{blue}} (2025, safety benchmarks, deployment controls, and early deployment), and \textcolor[HTML]{8844AA}{\textbf{purple}} (2026, self-hosted ecosystems, memory, and governance).}
+\Description{A diagonal timeline graphic covering 2023 through 2026 for representative computer-use-agent research, viewed through the lens of trustworthiness.}
+\label{fig:cua-evolution}
+\end{figure*}
 
-
-Figure~\ref{fig:cua-evolution} is intended as a representative chronology rather than an exhaustive literature map. Read as a single line, the landscape runs from WebArena and CogAgent in 2023, which made computer-use perception and action concrete, to the 2024 expansion driven by SeeClick, Cradle, Agent~S, OS-ATLAS, AutoGLM, ShowUI, OSWorld, AndroidWorld, Windows Agent Arena, and WebVoyager, where the field moved beyond web prototypes and early trust concerns became visible through benchmarks such as InjecAgent and AgentHarm~\cite{webarena2023,cogagent2023,seeclick2024,cradle2024,agents2024,osatlas2024,autoglm2024,showui2024,osworld2024,androidworld2024,windowsarena2024,webvoyager2024,injecagent2024,agentharm2024}. In 2025, UI-TARS, UFO2, Browser Use, Midscene, ScaleCUA, ComputerRL, OpenAI CUA, and Anthropic computer use pushed capability, productization, and early deployment forward, while SafeArena, WASP, OS-Harm, ST-WebAgentBench, and OpenAgentSafety turned trustworthiness evaluation into a distinct line of work~\cite{uitars2025,ufo2025,browseruse2025,midscene2025,scalecua2025,computerrl2025,openai2025cua,openai2025operatorsystemcard,anthropic2025computeruse,safearena2025,wasp2025,osharm2025,stwebagentbench2025,openagentsafety2025}. In 2026, Computer-Using World Model, CUA-Skill, OpenClaw, OpenClaw-RL, Project Mariner, AgeMem, and MemPO brought self-hosted ecosystems, memory, and governance closer to the center of the field, while PASB, MemGUI-Bench, SEAgent, ToolSafe, PRISM, ClawKeeper, and Agent Privilege Separation pushed the safety line toward persistence, ecosystem hardening, and oversight~\cite{cuwm2026,cuaskill2026,openclaw2026,openclawrl2026,google2026mariner,agemem2026,mempo2026,doubleagent2026,memguibench2026,seagent2026,toolsafe2026,openclawprism2026,clawkeeper2026,agentprivsep2026}. This chronology serves a different purpose from the later taxonomy: the timeline shows how the field formed, while the taxonomy explains where trust breaks down once such systems are deployed.
-
-\subsection{Analytical Bridge to the Boundary Taxonomy}
-
-\blocksubsubsection{Formal Analytical Lens}
+\subsection{Formal Analytical Lens}
 \label{sec:formal-framework}
 
 Having defined the CUA object and positioned the survey corpus, we now introduce the formal analytical lens that specifies \emph{how} trust breaks can be analyzed across the five boundaries. The lens has two layers. The \emph{adapted layer} draws on recent results from the agent-security~\cite{siu2026formalizing} and memory~\cite{memorysurveycua2026} literatures introduced below, while access-control and runtime-enforcement formalisms are instantiated later in Sections~\ref{sec:action-permission} and~\ref{sec:governance}~\cite{seagent2026,agentspec2025,progent2025}. The \emph{survey-defined layer} contributes a coupled boundary-risk decomposition (Eq.~\ref{eq:coupled-risk}) that captures how failures propagate across boundaries, an interaction structure that is most densely populated in systems possessing the full CUA capability stack.
@@ -715,7 +556,7 @@ Definition~1 defines $m_t$ as memory \emph{retrieved} at step~$t$. We now formal
 where $M_t$ is the persistent memory store, $\mathrm{Write}$ encodes new observations into it, $\mathrm{Manage}$ performs consolidation, forgetting, or access-control operations, and $\mathrm{Read}$ retrieves entries relevant to the current query context~$q_t$, producing the retrieved memory~$m_t$ that feeds into the state update~$f$. The notational distinction between the store~$M_t$ and the retrieval~$m_t$ is deliberate: it separates what the agent \emph{remembers} (the full store) from what it \emph{uses} (the retrieved subset), and it preserves compatibility with Definition~1. For CUA, the Write channel is especially broad because the agent continuously ingests multimodal interface observations that may contain sensitive credentials, personal data, or adversarially planted content. Trust failures arise when any of the three operators violates a security property: Write may over-retain sensitive data (data-isolation violation), Manage may fail to expire stale or poisoned entries (task-alignment violation if stale context misdirects the agent), and Read may surface attacker-controlled content that steers subsequent actions (source-authorization violation).
 
 \smallskip
-\noindent\textbf{Trajectory-level coupled boundary risk (survey-defined).}
+\noindent\textbf{Trajectory-level coupled boundary risk (first proposed in this survey).}
 The per-step formalisms above, all adapted from existing work, capture single-boundary failures. However, the motivating scenario in Section~1 illustrates that CUA risks propagate \emph{across} boundaries: an injected instruction becomes a harmful action, whose consequences are persisted in memory, amplified through the ecosystem, and exposed by governance gaps. We propose the following decomposition as this survey's formal contribution, capturing the cross-boundary interaction structure that is most fully exposed in systems possessing the full CUA capability stack.
 
 Let $\tau = \{(o_t, s_t, a_t, e_{t+1})\}_{t=0}^{H}$ denote a complete trajectory (up to horizon~$H$ from Definition~1). The \emph{coupled boundary risk} decomposes as
@@ -727,11 +568,11 @@ where $\mathcal{B} = \{\text{content},\, \text{action},\, \text{memory-personali
 
 \smallskip
 \noindent\emph{When is $\Delta_{b,b'} = 0$?}
-An interaction term vanishes when the two boundaries are structurally decoupled in the agent architecture, that is, when a failure at boundary~$b$ cannot causally influence boundary~$b'$. For agent paradigms that lack the full CUA stack, many terms are zero by construction: a pure API agent without persistent memory has $\Delta_{\text{content},\text{memory-personalization}} = 0$ because there is no Write channel to persist injected content; a single-application GUI agent without external skills has $\Delta_{\text{memory-personalization},\text{ecosystem}} = 0$ because no skill-sharing pathway exists. Table~\ref{tab:trust-boundary-exposure} shows that only CUA is structurally exposed to all five boundaries, which is precisely why the full $5 \times 5$ interaction matrix is non-trivially populated only for CUA.
+An interaction term vanishes when the two boundaries are structurally decoupled in the agent architecture, that is, when a failure at boundary~$b$ cannot causally influence boundary~$b'$. For agent paradigms that lack the full CUA stack, many terms are zero by construction: a pure LLM agent without persistent memory has $\Delta_{\text{content},\text{memory-personalization}} = 0$ because there is no Write channel to persist injected content; a single-application GUI agent without external skills has $\Delta_{\text{memory-personalization},\text{ecosystem}} = 0$ because no skill-sharing pathway exists. Table~\ref{tab:trust-boundary-exposure} shows that only CUA is structurally exposed to all five boundaries, which is precisely why the full $5 \times 5$ interaction matrix is non-trivially populated only for CUA.
 
 \smallskip
 \noindent\emph{When is $\Delta_{b,b'}$ significantly non-zero?}
-The interaction term is large when (i)~the agent possesses the architectural pathway connecting the two boundaries, and (ii)~the failure at the source boundary produces artifacts (memory entries, skill modifications, unreviewed actions) that persist or amplify at the target boundary. Table~\ref{tab:cross-boundary} summarizes the three most consequential interaction pairs for CUA systems.
+The interaction term is large when (1)~the agent possesses the architectural pathway connecting the two boundaries, and (2)~the failure at the source boundary produces artifacts (memory entries, skill modifications, unreviewed actions) that persist or amplify at the target boundary. Table~\ref{tab:cross-boundary} summarizes the three most consequential interaction pairs for CUA systems.
 
 \begin{table*}[!ht]
 \caption{Representative cross-boundary interaction terms. Each row identifies an interaction pair $\Delta_{b,b'}$, the architectural pathway that enables coupling in CUA systems, and a concrete consequence documented in the literature.}
@@ -766,11 +607,10 @@ $\Delta_{\text{action},\,\text{governance}}$ &
 
 The decomposition in Eq.~\ref{eq:coupled-risk} serves two purposes within this survey. First, it provides a conceptual scaffold for the survey's organizing principle: the five trust boundaries are not independent failure silos but a coupled risk system, and any defense strategy that addresses boundaries in isolation can underestimate deployment risk by omitting the interaction terms. Second, it identifies cross-boundary propagation as the main open formalization problem. The marginal risks~$R_b$ are increasingly well-characterized by the adapted formalisms above, whereas the interaction terms~$\Delta_{b,b'}$ still lack an established treatment in the CUA literature. Quantifying, bounding, or empirically measuring these terms is therefore a key direction for future work (Section~\ref{sec:future-directions}).
 
-\blocksubsubsection{From System Coverage to Trust-Boundary Taxonomy}
+Together, the adapted and survey-defined layers explain how the later taxonomy is organized. The adapted layer fixes the agent--environment interface and the step-level properties that most directly anchor the first four boundaries, while the survey-defined layer adds a coupled boundary-risk view that motivates treating deployment failures as a propagation chain rather than as isolated modules. The ecosystem and governance boundaries are therefore not inherited wholesale from any single prior formalism; they are deployment-specific extensions introduced to cover recurrent CUA evidence that falls outside narrower agent-security abstractions. Prior GUI-agent and CUA surveys, security and threat-modelling work, and CUA-native benchmarks are used here only as external consistency checks~\cite{sager2025acu,foundationguisurvey2024,llmbrainedguisurvey2024,nguyen2025gui,hu2025osagents,hou2025mcp,osharm2025,wasp2025,safearena2025,clawaudit2026,tamingopenclaw2026,autonomousagentthreats2026,osworld2024,webvoyager2024,onlinemind2web2025,memguibench2026,amabench2025}: we verify that each boundary organized by this lens is populated by recurring empirical evidence, and that no widely reported CUA failure mode falls outside the five-boundary scheme. In this sense the taxonomy is organized by the formal lens and checked against the empirical literature, rather than synthesized bottom-up from benchmark categories alone. This also clarifies the status of its subcategories: some are \emph{empirically recurring failure modes} (e.g.\ indirect instruction injection, unsafe action execution, stale memory), some are \emph{synthesis-supported analytical subcategories} (e.g.\ deceptive interface state, memory poisoning, provenance failure), and others are \emph{governance-oriented analytical categories} (e.g.\ approval failure, rollback failure). Being explicit about these differences prevents the paper from overstating how directly every category is already standardized by the literature.
 
-The preceding scope-and-positioning subsections define the corpus boundary; this subsection now shifts from \emph{what is in scope} to \emph{how trust failures are analytically organized}. The two-layer lens above structures the taxonomy rather than mechanically deriving it. The adapted layer fixes the agent--environment interface and the step-level properties that most directly anchor the first four boundaries, while the survey-defined layer adds a coupled boundary-risk view that motivates treating deployment failures as a propagation chain rather than as isolated modules. The ecosystem and governance boundaries are therefore not inherited wholesale from any single prior formalism; they are deployment-specific extensions introduced to cover recurrent CUA evidence that falls outside narrower agent-security abstractions. Prior GUI-agent and CUA surveys, security and threat-modelling work, and CUA-native benchmarks are used here only as external consistency checks~\cite{sager2025acu,foundationguisurvey2024,llmbrainedguisurvey2024,nguyen2025gui,hu2025osagents,hou2025mcp,osharm2025,wasp2025,safearena2025,clawaudit2026,tamingopenclaw2026,autonomousagentthreats2026,osworld2024,webvoyager2024,onlinemind2web2025,memguibench2026,amabench2025}: we verify that each boundary organized by this lens is populated by recurring empirical evidence, and that no widely reported CUA failure mode falls outside the five-boundary scheme. In this sense the taxonomy is organized by the formal lens and checked against the empirical literature, rather than synthesized bottom-up from benchmark categories alone. This also clarifies the status of its subcategories: some are \emph{empirically recurring failure modes} (e.g.\ indirect instruction injection, unsafe action execution, stale memory), some are \emph{synthesis-supported analytical subcategories} (e.g.\ deceptive interface state, memory poisoning, provenance failure), and others are \emph{governance-oriented analytical categories} (e.g.\ approval failure, rollback failure). Being explicit about these differences prevents the paper from overstating how directly every category is already standardized by the literature.
+% Figure~\ref{fig:taxonomy} then serves as the roadmap for the five boundary sections that follow by visualizing the structure as a boundary-and-evidence tree. The ordering follows the deployment risk propagation path: risks enter through external content, become consequences through actions, persist through memory, amplify through ecosystems, and are either constrained or exposed by governance. Figure~\ref{fig:running-case} keeps this framing concrete by tracing a single running case through all five trust-breakdown surfaces and, for each surface, contrasting the CUA-specific failure with what a typed, tool-using general LLM agent would experience in the same situation. The same running case is then revisited throughout Sections~3--7 to anchor the evidence.
 
-Figure~\ref{fig:taxonomy} provides the roadmap for the five boundary sections that follow by visualising the structure as a boundary-and-evidence tree. The ordering follows the deployment risk propagation path: risks enter through external content, become consequences through actions, persist through memory, amplify through ecosystems, and are either constrained or exposed by governance. To make this framing concrete before the five boundary sections are developed, Figure~\ref{fig:running-case} traces a single running case through all five trust-breakdown surfaces, and for each surface contrasts the CUA-specific failure with what a typed, tool-using general LLM agent would experience in the same situation. The same running case is then referenced back from each of the five boundary sections to anchor the evidence.
 
 \FloatBarrier
 \clearpage
@@ -784,7 +624,7 @@ Figure~\ref{fig:taxonomy} provides the roadmap for the five boundary sections th
 \caption{Trust-boundary taxonomy for trustworthy computer-use agents, organised by \emph{where risks arise and how failures propagate}. The five boundaries trace the deployment risk path: entry (external content), consequence (actions), persistence (memory), amplification (ecosystems), and governance (human oversight). Citations are colour-coded: \cSaf{\textbf{green}}~=~safety-targeted, \textbf{black}~=~safety-incidental, \cTra{\textbf{blue}}~=~transferred from the broader agent/LLM security literature.}
 \label{fig:taxonomy}
 
-\medskip
+\bigskip
 \begin{minipage}{\textwidth}
 \refstepcounter{table}
 \centering
@@ -817,7 +657,7 @@ Human Oversight \& Governance (\S\ref{sec:governance})
 \section{External-Content Boundary}
 \label{sec:external-content}
 
-The external-content boundary concerns how risk enters a CUA system through untrusted webpages, documents, interface elements, and other environment content. This is the natural first boundary because computer-use systems are driven by perceived interface state. Unlike a pure API agent, a CUA must interpret externally controlled visual or semi-structured content before it can decide what to do. As a result, malicious or misleading content can influence both perception and action planning.
+The external-content boundary concerns how risk enters a CUA system through untrusted webpages, documents, interface elements, and other environment content. This is the natural first boundary because computer-use systems are driven by perceived interface state. Unlike a pure LLM agent acting only through APIs, a CUA must interpret externally controlled visual or semi-structured content before it can decide what to do. As a result, malicious or misleading content can influence both perception and action planning.
 
 In the running reimbursement case from Figure~\ref{fig:running-case}, the initial failure enters through a visually rendered instruction hidden in an email receipt, illustrating how externally controlled content is converted into perceived task context before any explicit action is taken.
 
@@ -1487,7 +1327,7 @@ Table~\ref{tab:coverage-gaps} crosses the five trustworthiness dimensions of Def
 
 \begin{table*}[!ht]
 \centering
-\caption{Coverage map: evaluation goals $\times$ evidence types. \cmark = meaningful coverage exists; \pmark = partial or indirect coverage; \xmark = no standardized evaluation.}
+\caption{Coverage map: evaluation goals $\times$ evidence types.}
 \label{tab:coverage-gaps}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
@@ -1690,7 +1530,154 @@ The field of trustworthy CUA is forming rapidly. We hope this survey provides a 
 \bibliography{references,trustworthy_cua_extra_refs}
 
 \clearpage
-% \appendix
+\appendix
+
+\section{Comparison with Related Surveys}
+\label{app:related-surveys}
+
+Table~\ref{tab:survey-comparison} situates this survey against the most relevant neighboring surveys. The main distinction is not simply broader coverage, but three design choices: an explicit CUA scope, a boundary/failure organizing lens, and a formal lens that structures the survey's analysis.
+
+The survey landscape around this field is already rich. Multiple systematic surveys cover GUI agents from the perspectives of frameworks, components, training, and evaluation~\cite{foundationguisurvey2024,llmbrainedguisurvey2024,nguyen2025gui}. OS-agent surveys unify cross-device interaction perspectives~\cite{hu2025osagents}. A survey specifically focused on trustworthy GUI agents has also appeared~\cite{trustworthyguisurvey2025}. Broader surveys of attack and defense in agentic AI are also now emerging~\cite{attackdefenselandscape2026}, but they do not by themselves resolve which risk propagation path is structurally distinctive for interface-grounded computer use. This means a new survey can no longer justify itself through topic novelty alone. Nevertheless, the existing body of work leaves three structural gaps. First, in the prior literature the scope boundary of CUA has not been rigorously defined; the relationship between ``computer-use agents,'' ``GUI agents,'' and ``OS agents'' varies across surveys, leaving the analytical object ambiguous (a gap that Definition~1 in \S2.1 addresses). Second, the risk propagation path has not been systematically characterized: existing organizational approaches, whether by module, by benchmark, or by broad trust dimensions, are well-suited for tracking capability progress but poorly equipped to explain how deployment risks propagate from one stage to the next. How does an injected instruction become a harmful action? How are the consequences of a harmful action preserved long-term through memory? How do risks in memory amplify as the tool and skill ecosystem expands? This propagation chain requires a new organizing principle. Third, the maturity levels of evidence have not been distinguished; some failure mechanisms have stable empirical recurrence (e.g., prompt injection), others are analytically synthesized (e.g., memory poisoning), and still others are governance-oriented requirements (e.g., rollback and policy enforcement). Conflating these levels risks overstating the field's overall readiness. Concretely, the survey is bounded to a main corpus of approximately 170 papers from January 2023 through March 2026, with the detailed inclusion logic made explicit in Section~\ref{sec:scope-positioning}.
+
+This comparison fixes the role of the present survey. We do not attempt another broad overview of GUI agents, OS agents, or agentic-AI safety in general. Instead, we delimit a computer-use-agent corpus, organize it by the risk propagation chain that becomes distinctive under live interface-level action, and use a formal lens to keep boundary-level synthesis, cross-boundary propagation, and evidence maturity in the same analytical frame. Section~\ref{sec:scope-positioning} makes that corpus boundary explicit, and Section~\ref{sec:formal-framework} turns the scoped corpus into the survey's trust-boundary roadmap.
+
+\section{Evidence-Sourcing Principle and System Families}
+\label{app:evidence-sourcing-families}
+
+\subsection{Evidence-sourcing principle}
+Because trustworthy CUA is a nascent area, the strongest available evidence for several failure mechanisms originates outside the CUA literature proper. For example, formal analyses of prompt injection attacks and defenses come from the systems-security community~\cite{liuyupei2024formalizing,struq2025,secalign2025}; knowledge-base poisoning evidence comes from retrieval-augmented generation research~\cite{poisonedrag2025}; and multi-turn escalation attacks are best documented in general LLM safety work~\cite{crescendo2025}. We deliberately include such \emph{transferred evidence} when three conditions hold: (1)~the failure mechanism is structurally present in CUA execution (e.g., the agent processes untrusted external content, retrieves from persistent memory, or selects among external tools); (2)~no CUA-native study yet provides equivalent empirical depth; and (3)~the gap between the source setting and the CUA setting is explicitly discussed in the text so that the reader can judge transferability. Throughout the paper, we are careful to distinguish CUA-native empirical evidence from transferred evidence and from analytical categories that remain under-benchmarked in CUA-specific settings. This three-way distinction is a deliberate design choice: it prevents the survey from overstating the maturity of the field while still incorporating the best available knowledge about each failure mechanism.
+
+\subsection{Representative CUA system families covered in this survey}
+
+Table~\ref{tab:cua-system-families} makes the coverage boundary concrete by mapping the seven system families discussed throughout the paper, revealing the breadth of the CUA ecosystem that trustworthiness must account for. The seven families span perception and grounding, frameworks, training pipelines, memory systems, skill ecosystems, safety infrastructure, benchmarks, and commercial deployments. Together they show that trustworthy CUA is not a single-module problem but one that sits on top of a broad and rapidly growing infrastructure stack. This table serves a deliberately different purpose from the boundary-failure taxonomy (Figure~\ref{fig:taxonomy}): the table maps \emph{what systems are in scope} (the system view), while the taxonomy maps \emph{where trust breaks} across those systems (the risk view). The two representations are complementary: every failure mechanism in the taxonomy can be traced back to one or more system families in the table, and every system family exposes risks that propagate through multiple trust boundaries.
+
+\begin{table*}[!ht]
+\caption{The systems landscape underlying trustworthy CUA. Seven families span from perception to governance, showing the breadth of infrastructure on which trustworthiness depends. This table maps \emph{what systems are in scope}; the boundary-failure taxonomy (Figure~\ref{fig:taxonomy}) maps \emph{where trust breaks} across them. \colorbox{evSaf!15}{Green-shaded} systems are safety-targeted; unshaded systems are capability systems whose designs or findings have trustworthiness implications.}
+\label{tab:cua-system-families}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{@{}L{2.5cm} X L{3.8cm}@{}}
+\toprule
+\textbf{Family} & \textbf{Representative systems} & \textbf{Trustworthiness relevance} \\
+\midrule
+%% ── Family 1 ──
+Perception \& Grounding &
+CogAgent~\cite{cogagent2023},
+SeeClick~\cite{seeclick2024},
+ShowUI~\cite{showui2024},
+OS-ATLAS~\cite{osatlas2024},
+UI-TARS~\cite{uitars2025},
+UI-TARS-2~\cite{uitars22025},
+AutoGLM~\cite{autoglm2024} &
+Grounding reliability determines whether downstream actions match user intent or are misdirected by deceptive interface states. \\
+\midrule
+%% ── Family 2 ──
+CUA Frameworks \& Runtime Architecture &
+Agent~S~\cite{agents2024},
+Agent~S2~\cite{agents22025},
+Agent~S3~\cite{agents32026},
+UFO2~\cite{ufo2025},
+Browser-Use~\cite{browseruse2025},
+Computer-Using World Model~\cite{cuwm2026} &
+Planning, routing, staged control, and cross-application execution define the runtime architecture on which safety mechanisms must be layered. \\
+\midrule
+%% ── Family 3 ──
+Training, Scaling \& Reward &
+ScaleCUA~\cite{scalecua2025},
+OpenCUA~\cite{opencua2025},
+Learn-by-Interact~\cite{learnbyinteract2025},
+ComputerRL~\cite{computerrl2025},
+AReaL~\cite{areal2025},
+EvoCUA~\cite{evocua2026},
+Agent Alpha~\cite{agentalpha2026},
+PC~Agent-E~\cite{pcaegente2025},
+DART-GUI~\cite{dartgui2025} &
+Trajectories, RL, search, and test-time computation rapidly raise agent power, widening the gap between capability gains and trustworthy evaluation. \\
+\midrule
+%% ── Family 4 ──
+Memory, Personalization \& Privacy &
+Mem0~\cite{mem02024},
+OpenViking~\cite{openviking2025},
+AgentProg~\cite{agentprog2025},
+MemPO~\cite{mempo2026},
+A-MEM~\cite{amem2025},
+Auto-scaling Memory~\cite{autoscalememory2025},
+HyMEM~\cite{hymem2026},
+MGA~\cite{mga2025},
+Chain-of-Memory~\cite{chainofmemory2025},
+PersonalAlign~\cite{personalalign2026},
+EchoTrail-GUI~\cite{echotrailgui2025},
+Agent-ScanKit~\cite{agentscankit2025} &
+Long-horizon assistance depends on persistent state, but that same state creates staleness, privacy leakage, provenance, and poisoning concerns. \\
+\midrule
+%% ── Family 5 ──
+Skill Ecosystems \& Supply-Chain Security &
+CUA-Skill~\cite{cuaskill2026},
+Midscene.js~\cite{midscene2025},
+OpenCUA~\cite{opencua2025},
+OpenClaw~\cite{openclaw2026},
+OpenClaw-RL~\cite{openclawrl2026},
+\colorbox{evSaf!15}{IronClaw~\cite{ironclaw2026}},
+\colorbox{evSaf!15}{SecureClaw~\cite{secureclaw2026}},
+\colorbox{evSaf!15}{ZeroClaw~\cite{zeroclaw2026}},
+\colorbox{evSaf!15}{PRISM~\cite{openclawprism2026}},
+\colorbox{evSaf!15}{ClawKeeper~\cite{clawkeeper2026}},
+\colorbox{evSaf!15}{SkillFortify~\cite{skillfortify2026}},
+\colorbox{evSaf!15}{openclaw-carapace~\cite{openclawcarapace2026}},
+\colorbox{evSaf!15}{ClawWorm~\cite{clawworm2026}},
+\colorbox{evSaf!15}{Trojans Whisper~\cite{trojanswhisper2026}},
+\colorbox{evSaf!15}{Skills in the Wild~\cite{agentskillswild2026}} &
+Trustworthiness depends on reusable skills, ecosystem hardening, and supply-chain integrity rather than on the base model alone. \\
+\midrule
+%% ── Family 6 ──
+Safety Infrastructure \& Governance &
+\colorbox{evSaf!15}{SEAgent~\cite{seagent2026}},
+\colorbox{evSaf!15}{AgentSpec~\cite{agentspec2025}},
+\colorbox{evSaf!15}{Progent~\cite{progent2025}},
+\colorbox{evSaf!15}{STEVE~\cite{steve2025}},
+\colorbox{evSaf!15}{AgentSentinel~\cite{agentsentinel2025}},
+\colorbox{evSaf!15}{ToolSafe~\cite{toolsafe2026}},
+\colorbox{evSaf!15}{OS-Sentinel~\cite{ossentinel2025}},
+\colorbox{evSaf!15}{SafeClaw-R~\cite{safeclawr2026}},
+\colorbox{evSaf!15}{QuadSentinel~\cite{quadsentinel2025}},
+\colorbox{evSaf!15}{Agent Privilege Separation~\cite{agentprivsep2026}},
+\colorbox{evSaf!15}{NLAHs~\cite{nlah2026}},
+\colorbox{evSaf!15}{ClawGrip~\cite{shan2026dontletclawgrip}},
+\colorbox{evSaf!15}{InquireMobile~\cite{inquiremobile2025}},
+\colorbox{evSaf!15}{ReInAgent~\cite{reinagent2025}},
+\colorbox{evSaf!15}{RecAgent~\cite{recagent2025}} &
+Once a CUA has device-level permissions, persistent memory, and external skills, approval, enforcement, handoff, and rollback become architectural requirements, not optional overlays. \\
+\midrule
+%% ── Family 7 ──
+Benchmarks \& Commercial Deployments &
+OSWorld~\cite{osworld2024},
+WebArena~\cite{webarena2023},
+AndroidWorld~\cite{androidworld2024},
+ScreenSpot-Pro~\cite{screenspotpro2025},
+\colorbox{evSaf!15}{SafeArena~\cite{safearena2025}},
+\colorbox{evSaf!15}{OS-Harm~\cite{osharm2025}},
+\colorbox{evSaf!15}{WASP~\cite{wasp2025}},
+\colorbox{evSaf!15}{SecureWebArena~\cite{securewebarena2025}},
+\colorbox{evSaf!15}{SusBench~\cite{susbench2025}},
+\colorbox{evSaf!15}{DECEPTICON~\cite{decepticon2025}},
+\colorbox{evSaf!15}{PASB~\cite{doubleagent2026}},
+\colorbox{evSaf!15}{MemGUI-Bench~\cite{memguibench2026}},
+\colorbox{evSaf!15}{GUIGuard~\cite{guiguard2026}},
+\colorbox{evSaf!15}{WorldGUI~\cite{worldgui2025}},
+\colorbox{evSaf!15}{BeSafe-Bench~\cite{besafebench2026}},
+\colorbox{evSaf!15}{ST-WebAgentBench~\cite{stwebagentbench2025}},
+OpenAI CUA~\cite{openai2025cua},
+Anthropic computer use~\cite{anthropic2025computeruse},
+Project Mariner~\cite{google2026mariner},
+PinchBench~\cite{pinchbench2026},
+ClawEval~\cite{claweval2026},
+ClawBench~\cite{clawbench2026} &
+These artifacts define the evidence base for judging whether growing capability translates into safe, robust, and governable deployment. \\
+\bottomrule
+\end{tabularx}
+\end{table*}
 
 % \section{Case Study Index}
 
